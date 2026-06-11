@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": true,
-  "main": "dist/main.js",
+  "main": "src/main.ts",
   "license": "UNLICENSED",
   "scripts": {
     "postinstall": "npx prisma generate && npm run build",
