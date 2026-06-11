@@ -29,12 +29,12 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
         }
         const config = await this.sensorsRepository.upsertBlowerConfig(data.tenantId, data.blowerId, data.currentThreshold);
         const readingData = {
-            tenantId: data.tenantId,
-            blowerConfigId: config.id,
+            tenant: { connect: { id: data.tenantId } },
+            blowerConfig: { connect: { id: config.id } },
             psi: data.psi,
             isAlert: data.isAlert ?? false,
         };
-        return super.create(readingData);
+        return this.sensorsRepository.createReading(readingData);
     }
     async getLatestThreshold(blowerId) {
         if (blowerId) {

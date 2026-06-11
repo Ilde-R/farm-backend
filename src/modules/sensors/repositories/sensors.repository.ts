@@ -16,14 +16,17 @@ export class SensorsRepository extends BaseRepository<
   }
 
   async upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number) {
+    const updateData: any = {};
+    if (currentThreshold !== undefined) {
+      updateData.currentThreshold = currentThreshold;
+    }
+
     return this.prisma.blowerConfig.upsert({
       where: { blowerId },
-      update: {
-        ...(currentThreshold !== undefined && { currentThreshold }),
-      },
+      update: updateData,
       create: {
         blowerId,
-        tenantId,
+        tenant: { connect: { id: tenantId } },
         currentThreshold: currentThreshold ?? 2.0,
       },
     });
@@ -37,5 +40,9 @@ export class SensorsRepository extends BaseRepository<
 
   async getFirstBlowerConfig() {
     return this.prisma.blowerConfig.findFirst();
+  }
+
+  async createReading(data: any) {
+    return this.prisma.pressureReading.create({ data });
   }
 }

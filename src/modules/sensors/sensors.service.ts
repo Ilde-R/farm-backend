@@ -34,13 +34,13 @@ export class SensorsService extends BaseService<
 
     // 2. Guardamos solo la lectura histórica
     const readingData = {
-      tenantId: data.tenantId,
-      blowerConfigId: config.id,
+      tenant: { connect: { id: data.tenantId } },
+      blowerConfig: { connect: { id: config.id } },
       psi: data.psi,
       isAlert: data.isAlert ?? false,
     };
 
-    return super.create(readingData as any);
+    return this.sensorsRepository.createReading(readingData);
   }
 
   async getLatestThreshold(blowerId?: string): Promise<number> {

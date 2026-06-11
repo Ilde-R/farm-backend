@@ -26,4 +26,12 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         blowerId: string;
         currentThreshold: number;
     } | null>;
+    createReading(data: any): Promise<{
+        id: string;
+        createdAt: Date;
+        tenantId: string;
+        blowerConfigId: string | null;
+        psi: number;
+        isAlert: boolean;
+    }>;
 }

@@ -57,7 +57,7 @@ let SensorsGateway = class SensorsGateway {
         return { status: 'success', threshold: data.threshold };
     }
     async handleGetThreshold(data) {
-        const threshold = await this.sensorsService.getLatestThreshold();
+        const threshold = await this.sensorsService.getLatestThreshold(data?.blowerId);
         this.server.clients.forEach((client) => {
             if (client.readyState === 1) {
                 client.send(JSON.stringify({

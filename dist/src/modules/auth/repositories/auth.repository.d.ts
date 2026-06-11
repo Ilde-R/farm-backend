@@ -12,8 +12,8 @@ export declare class AuthRepository {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        email: string;
         tenantId: string | null;
+        email: string;
         username: string;
         password: string;
     } | null>;

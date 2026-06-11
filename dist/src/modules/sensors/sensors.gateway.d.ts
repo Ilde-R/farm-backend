@@ -4,7 +4,14 @@ export declare class SensorsGateway {
     private readonly sensorsService;
     server: Server;
     constructor(sensorsService: SensorsService);
-    create(data: any): Promise<any>;
+    create(data: any): Promise<{
+        id: string;
+        createdAt: Date;
+        tenantId: string;
+        blowerConfigId: string | null;
+        psi: number;
+        isAlert: boolean;
+    } | null | undefined>;
     handleSetNewThreshold(data: {
         threshold: number;
     }): {
