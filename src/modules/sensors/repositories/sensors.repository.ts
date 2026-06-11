@@ -14,4 +14,10 @@ export class SensorsRepository extends BaseRepository<
   constructor(private readonly prisma: PrismaService) {
     super(prisma.pressureReading);
   }
+
+  async getLatestReading() {
+    return this.prisma.pressureReading.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

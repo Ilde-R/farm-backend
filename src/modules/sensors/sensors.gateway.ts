@@ -61,10 +61,15 @@ export class SensorsGateway {
   }
 
   @SubscribeMessage('get_threshold')
-  handleGetThreshold() {
+  async handleGetThreshold(@MessageBody() data: any) {
+    const threshold = await this.sensorsService.getLatestThreshold();
+
     this.server.clients.forEach((client: any) => {
       if (client.readyState === 1) {
-        client.send(JSON.stringify({ event: 'get_threshold' }));
+        client.send(JSON.stringify({
+          event: 'current_threshold',
+          data: { threshold }
+        }));
       }
     });
   }

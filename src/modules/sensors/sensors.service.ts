@@ -22,4 +22,9 @@ export class SensorsService extends BaseService<
 
     return super.create(data);
   }
+
+  async getLatestThreshold(): Promise<number> {
+    const reading = await this.sensorsRepository.getLatestReading();
+    return reading?.currentThreshold ?? 2.0;
+  }
 }
