@@ -11,16 +11,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SensorsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const sensors_service_1 = require("./sensors.service");
 const ws_1 = require("ws");
+const ws_2 = __importDefault(require("ws"));
 let SensorsGateway = class SensorsGateway {
     sensorsService;
     server;
     constructor(sensorsService) {
         this.sensorsService = sensorsService;
+    }
+    async handleRegisterBlower(data, client) {
+        try {
+            console.log('Registro de soplador solicitado:', data);
+            const config = await this.sensorsService.registerBlower(data.tenantId, data.blowerId);
+            client.send(JSON.stringify({
+                event: 'blower_registered',
+                data: {
+                    blowerConfigId: config.id,
+                    currentThreshold: config.currentThreshold,
+                },
+            }));
+        }
+        catch (error) {
+            console.error('ERROR AL REGISTRAR SOPLADOR:', error);
+        }
     }
     async create(data) {
         try {
@@ -80,6 +100,14 @@ __decorate([
     (0, websockets_1.WebSocketServer)(),
     __metadata("design:type", ws_1.Server)
 ], SensorsGateway.prototype, "server", void 0);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('register_blower'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, ws_2.default]),
+    __metadata("design:returntype", Promise)
+], SensorsGateway.prototype, "handleRegisterBlower", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('pressure_reading'),
     __param(0, (0, websockets_1.MessageBody)()),

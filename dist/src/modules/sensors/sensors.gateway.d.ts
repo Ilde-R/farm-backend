@@ -1,9 +1,14 @@
 import { SensorsService } from './sensors.service';
 import { Server } from 'ws';
+import WebSocket from 'ws';
 export declare class SensorsGateway {
     private readonly sensorsService;
     server: Server;
     constructor(sensorsService: SensorsService);
+    handleRegisterBlower(data: {
+        tenantId: string;
+        blowerId: string;
+    }, client: WebSocket): Promise<void>;
     create(data: any): Promise<{
         id: string;
         createdAt: Date;

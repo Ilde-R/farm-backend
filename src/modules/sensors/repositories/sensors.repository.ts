@@ -3,7 +3,6 @@ import { BaseRepository } from '../../../common/abstracts/base.repository';
 import { CreateSensorDto } from '../dto/create-sensor.dto';
 import { UpdateSensorDto } from '../dto/update-sensor.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
-// import { defaultSensorSelect } from '../selects/sensor.selects';
 
 @Injectable()
 export class SensorsRepository extends BaseRepository<
@@ -16,19 +15,21 @@ export class SensorsRepository extends BaseRepository<
   }
 
   async upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number) {
-    const updateData: any = {};
-    if (currentThreshold !== undefined) {
-      updateData.currentThreshold = currentThreshold;
-    }
-
     return this.prisma.blowerConfig.upsert({
       where: { blowerId },
-      update: updateData,
+      update: {},
       create: {
         blowerId,
         tenant: { connect: { id: tenantId } },
         currentThreshold: currentThreshold ?? 2.0,
       },
+    });
+  }
+
+  async updateBlowerThreshold(blowerConfigId: string, threshold: number) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data: { currentThreshold: threshold },
     });
   }
 

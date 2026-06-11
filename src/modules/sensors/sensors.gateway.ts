@@ -3,12 +3,11 @@ import {
   SubscribeMessage,
   MessageBody,
   WebSocketServer,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { SensorsService } from './sensors.service';
-import { CreateSensorDto } from './dto/create-sensor.dto';
-import { UpdateSensorDto } from './dto/update-sensor.dto';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Server } from 'ws';
+import WebSocket from 'ws';
 
 @WebSocketGateway({ cors: true })
 export class SensorsGateway {
@@ -16,12 +15,40 @@ export class SensorsGateway {
   server!: Server;
   constructor(private readonly sensorsService: SensorsService) {}
 
+  // El Arduino se registra al conectarse (respaldo por si Flutter no lo hizo)
+  @SubscribeMessage('register_blower')
+  async handleRegisterBlower(
+    @MessageBody() data: { tenantId: string; blowerId: string },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    try {
+      console.log('Registro de soplador solicitado:', data);
+      const config = await this.sensorsService.registerBlower(
+        data.tenantId,
+        data.blowerId,
+      );
+
+      // Le devolvemos el blowerConfigId y el umbral al Arduino
+      client.send(
+        JSON.stringify({
+          event: 'blower_registered',
+          data: {
+            blowerConfigId: config.id,
+            currentThreshold: config.currentThreshold,
+          },
+        }),
+      );
+    } catch (error) {
+      console.error('ERROR AL REGISTRAR SOPLADOR:', error);
+    }
+  }
+
   @SubscribeMessage('pressure_reading')
   async create(@MessageBody() data: any) {
     try {
       console.log('¡NUEVO MENSAJE RECIBIDO DEL ARDUINO!:', data);
 
-      // Guardamos la data completa en la base de datos (incluyendo isAlert)
+      // Guardamos en la base de datos
       const record = await this.sensorsService.create(data);
 
       if (this.server && this.server.clients) {
@@ -38,7 +65,6 @@ export class SensorsGateway {
       }
       return record;
     } catch (error) {
-      // ¡Ya no tragaremos los errores en silencio!
       console.error('ERROR AL GUARDAR LECTURA DE PRESIÓN:', error);
     }
   }

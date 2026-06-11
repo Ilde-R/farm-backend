@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class CreateSensorDto {
     blowerId;
     tenantId;
+    blowerConfigId;
     isAlert;
     psi;
     currentThreshold;
@@ -21,7 +22,7 @@ class CreateSensorDto {
 exports.CreateSensorDto = CreateSensorDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'El identificador del soplador debe ser texto' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSensorDto.prototype, "blowerId", void 0);
 __decorate([
@@ -29,6 +30,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSensorDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSensorDto.prototype, "blowerConfigId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)

@@ -8,12 +8,16 @@ import {
 
 export class CreateSensorDto {
   @IsOptional()
-  @IsString({ message: 'El identificador del soplador debe ser texto' })
+  @IsString()
   blowerId?: string;
 
   @IsOptional()
   @IsString()
   tenantId?: string;
+
+  @IsOptional()
+  @IsString()
+  blowerConfigId?: string;
 
   @IsOptional()
   isAlert?: boolean;

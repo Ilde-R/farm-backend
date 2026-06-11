@@ -12,6 +12,13 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         blowerId: string;
         currentThreshold: number;
     }>;
+    updateBlowerThreshold(blowerConfigId: string, threshold: number): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+    }>;
     getBlowerConfig(blowerId: string): Promise<{
         id: string;
         name: string | null;
