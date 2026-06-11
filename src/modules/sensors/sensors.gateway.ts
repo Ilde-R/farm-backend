@@ -59,4 +59,22 @@ export class SensorsGateway {
 
     return { status: 'success', threshold: data.threshold };
   }
+
+  @SubscribeMessage('get_threshold')
+  handleGetThreshold() {
+    this.server.clients.forEach((client: any) => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ event: 'get_threshold' }));
+      }
+    });
+  }
+
+  @SubscribeMessage('current_threshold')
+  handleCurrentThreshold(@MessageBody() data: any) {
+    this.server.clients.forEach((client: any) => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ event: 'current_threshold', data }));
+      }
+    });
+  }
 }

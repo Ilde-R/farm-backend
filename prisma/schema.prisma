@@ -65,6 +65,8 @@ model PressureReading {
   blowerId  String?
   psi       Float
   isAlert   Boolean  @default(false)
+  currentThreshold Float @default(2.0)
+
   createdAt DateTime @default(now())
 
   @@map("pressure_reading")
