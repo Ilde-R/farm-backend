@@ -21,16 +21,13 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
     }
     async registerBlower(tenantId, blowerId) {
         const config = await this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
-        console.log(`Soplador registrado: ${blowerId} -> configId: ${config.id}`);
         return config;
     }
     async create(data) {
         if (!data.blowerConfigId || !data.tenantId) {
-            console.error('Faltan datos de blowerConfigId o tenantId. Datos recibidos:', data);
             return null;
         }
         if (data.psi < (data.currentThreshold ?? 2.0)) {
-            console.log(`¡ALERTA! Soplador perdió presión: ${data.psi} PSI`);
         }
         if (data.currentThreshold !== undefined && data.blowerId) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
