@@ -35,17 +35,19 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedUsers = seedUsers;
 const bcrypt = __importStar(require("bcrypt"));
+const tenant_seed_1 = require("./tenant.seed");
 async function seedUsers(prisma) {
     const hashedPassword = await bcrypt.hash('password123', 10);
-    await prisma.user.createMany({
-        data: [
-            {
-                username: 'admin',
-                email: 'admin@example.com',
-                password: hashedPassword,
-            },
-        ],
-        skipDuplicates: true,
+    await prisma.user.upsert({
+        where: { email: 'admin@example.com' },
+        update: { tenantId: tenant_seed_1.MAIN_TENANT_ID },
+        create: {
+            username: 'admin',
+            email: 'admin@example.com',
+            password: hashedPassword,
+            tenantId: tenant_seed_1.MAIN_TENANT_ID,
+        },
     });
+    console.log('Usuario admin creado y enlazado al tenant principal.');
 }
 //# sourceMappingURL=user.seed.js.map

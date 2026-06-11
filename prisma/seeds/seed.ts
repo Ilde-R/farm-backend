@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { seedTenants } from './tenant.seed';
 import { seedUsers } from './user.seed';
 
 const connectionString = process.env.DATABASE_URL;
@@ -14,9 +15,11 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('Seeding database...');
+  
+  await seedTenants(prisma);
+  
   await seedUsers(prisma);
 
-  //Mas
   console.log('Database seeded successfully!');
 }
 
