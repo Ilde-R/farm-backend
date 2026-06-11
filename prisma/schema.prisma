@@ -64,6 +64,7 @@ model PressureReading {
   tenantId  String   @db.Uuid
   blowerId  String?
   psi       Float
+  isAlert   Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@map("pressure_reading")

@@ -19,6 +19,9 @@ export class SensorsGateway {
   @SubscribeMessage('pressure_reading')
   async create(@MessageBody() data: any) {
     try {
+      console.log('¡NUEVO MENSAJE RECIBIDO DEL ARDUINO!:', data);
+
+      // Guardamos la data completa en la base de datos (incluyendo isAlert)
       const record = await this.sensorsService.create(data);
 
       if (this.server && this.server.clients) {
@@ -35,7 +38,8 @@ export class SensorsGateway {
       }
       return record;
     } catch (error) {
-      const err = error as any;
+      // ¡Ya no tragaremos los errores en silencio!
+      console.error('ERROR AL GUARDAR LECTURA DE PRESIÓN:', error);
     }
   }
 

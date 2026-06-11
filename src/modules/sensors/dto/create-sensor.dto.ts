@@ -5,6 +5,13 @@ export class CreateSensorDto {
   @IsString({ message: 'El identificador del soplador debe ser texto' })
   blowerId?: string;
 
+  @IsOptional()
+  @IsString()
+  tenantId?: string;
+
+  @IsOptional()
+  isAlert?: boolean;
+
   @IsNotEmpty({ message: 'La lectura de PSI es obligatoria' })
   @IsNumber({}, { message: 'El valor de PSI debe ser un número válido' })
   psi!: number;
