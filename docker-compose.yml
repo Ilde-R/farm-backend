@@ -1,0 +1,37 @@
+services:
+  # db:
+  #   image: postgres:18.4
+  #   ports:
+  #     - '5432:5432'
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: admin
+  #     POSTGRES_DB: db_farm_nails_dev
+  #     POSTGRES_HOST_AUTH_METHOD: trust
+  #   volumes:
+  #     - pg-data:/var/lib/postgresql
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres -d db_farm_nails_dev"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run build && npm run start:prod"
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
+
+# volumes:
+# pg-data:
