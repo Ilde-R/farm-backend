@@ -10,7 +10,7 @@ import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Server } from 'ws';
 
-@WebSocketGateway(8080, { cors: true })
+@WebSocketGateway({ cors: true })
 export class SensorsGateway {
   @WebSocketServer()
   server!: Server;

@@ -76,7 +76,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SensorsGateway.prototype, "handleSetNewThreshold", null);
 exports.SensorsGateway = SensorsGateway = __decorate([
-    (0, websockets_1.WebSocketGateway)(8080, { cors: true }),
+    (0, websockets_1.WebSocketGateway)({ cors: true }),
     __metadata("design:paramtypes", [sensors_service_1.SensorsService])
 ], SensorsGateway);
 //# sourceMappingURL=sensors.gateway.js.map
