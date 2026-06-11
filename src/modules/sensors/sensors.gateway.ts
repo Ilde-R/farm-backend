@@ -62,7 +62,7 @@ export class SensorsGateway {
 
   @SubscribeMessage('get_threshold')
   async handleGetThreshold(@MessageBody() data: any) {
-    const threshold = await this.sensorsService.getLatestThreshold();
+    const threshold = await this.sensorsService.getLatestThreshold(data?.blowerId);
 
     this.server.clients.forEach((client: any) => {
       if (client.readyState === 1) {

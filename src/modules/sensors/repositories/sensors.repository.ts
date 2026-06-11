@@ -15,9 +15,27 @@ export class SensorsRepository extends BaseRepository<
     super(prisma.pressureReading);
   }
 
-  async getLatestReading() {
-    return this.prisma.pressureReading.findFirst({
-      orderBy: { createdAt: 'desc' },
+  async upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number) {
+    return this.prisma.blowerConfig.upsert({
+      where: { blowerId },
+      update: {
+        ...(currentThreshold !== undefined && { currentThreshold }),
+      },
+      create: {
+        blowerId,
+        tenantId,
+        currentThreshold: currentThreshold ?? 2.0,
+      },
     });
+  }
+
+  async getBlowerConfig(blowerId: string) {
+    return this.prisma.blowerConfig.findUnique({
+      where: { blowerId },
+    });
+  }
+
+  async getFirstBlowerConfig() {
+    return this.prisma.blowerConfig.findFirst();
   }
 }

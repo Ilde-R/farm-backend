@@ -19,7 +19,8 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users            User[]
+  users User[]
+  blowerConfigs BlowerConfig[]
   pressureReadings PressureReading[]
 
   @@map("tenants")
@@ -57,16 +58,31 @@ model Session {
   @@map("sessions")
 }
 
-model PressureReading {
-  id     String @id @default(uuid()) @db.Uuid
+model BlowerConfig {
+  id String   @id @default(uuid()) @db.Uuid
   tenant Tenant @relation(fields: [tenantId], references: [id])
-
-  tenantId  String   @db.Uuid
-  blowerId  String?
-  psi       Float
-  isAlert   Boolean  @default(false)
+  tenantId String   @db.Uuid
+  
+  blowerId String @unique
+  name String? 
   currentThreshold Float @default(2.0)
 
+  pressureReadings PressureReading[]
+
+  @@map("blower_config")
+}
+
+model PressureReading {
+  id String @id @default(uuid()) @db.Uuid
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String @db.Uuid
+  
+  blowerConfig BlowerConfig? @relation(fields: [blowerConfigId], references: [id])
+  blowerConfigId String? @db.Uuid 
+  
+  psi Float
+  isAlert Boolean @default(false)
+  
   createdAt DateTime @default(now())
 
   @@map("pressure_reading")

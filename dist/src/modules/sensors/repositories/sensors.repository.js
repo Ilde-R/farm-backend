@@ -19,6 +19,27 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
         super(prisma.pressureReading);
         this.prisma = prisma;
     }
+    async upsertBlowerConfig(tenantId, blowerId, currentThreshold) {
+        return this.prisma.blowerConfig.upsert({
+            where: { blowerId },
+            update: {
+                ...(currentThreshold !== undefined && { currentThreshold }),
+            },
+            create: {
+                blowerId,
+                tenantId,
+                currentThreshold: currentThreshold ?? 2.0,
+            },
+        });
+    }
+    async getBlowerConfig(blowerId) {
+        return this.prisma.blowerConfig.findUnique({
+            where: { blowerId },
+        });
+    }
+    async getFirstBlowerConfig() {
+        return this.prisma.blowerConfig.findFirst();
+    }
 };
 exports.SensorsRepository = SensorsRepository;
 exports.SensorsRepository = SensorsRepository = __decorate([

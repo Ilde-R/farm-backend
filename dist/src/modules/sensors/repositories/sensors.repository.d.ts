@@ -5,4 +5,25 @@ import { PrismaService } from '../../../prisma/prisma.service';
 export declare class SensorsRepository extends BaseRepository<any, CreateSensorDto, UpdateSensorDto> {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+    }>;
+    getBlowerConfig(blowerId: string): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+    } | null>;
+    getFirstBlowerConfig(): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+    } | null>;
 }

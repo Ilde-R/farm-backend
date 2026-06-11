@@ -13,7 +13,10 @@ exports.CreateSensorDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateSensorDto {
     blowerId;
+    tenantId;
+    isAlert;
     psi;
+    currentThreshold;
 }
 exports.CreateSensorDto = CreateSensorDto;
 __decorate([
@@ -22,8 +25,24 @@ __decorate([
     __metadata("design:type", String)
 ], CreateSensorDto.prototype, "blowerId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSensorDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateSensorDto.prototype, "isAlert", void 0);
+__decorate([
     (0, class_validator_1.IsNotEmpty)({ message: 'La lectura de PSI es obligatoria' }),
     (0, class_validator_1.IsNumber)({}, { message: 'El valor de PSI debe ser un número válido' }),
+    (0, class_validator_1.Min)(0, { message: 'La presión (PSI) no puede ser un número negativo' }),
     __metadata("design:type", Number)
 ], CreateSensorDto.prototype, "psi", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'El umbral debe ser un número' }),
+    (0, class_validator_1.Min)(0, { message: 'El umbral no puede ser un número negativo' }),
+    __metadata("design:type", Number)
+], CreateSensorDto.prototype, "currentThreshold", void 0);
 //# sourceMappingURL=create-sensor.dto.js.map

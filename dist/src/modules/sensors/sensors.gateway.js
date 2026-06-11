@@ -24,6 +24,7 @@ let SensorsGateway = class SensorsGateway {
     }
     async create(data) {
         try {
+            console.log('¡NUEVO MENSAJE RECIBIDO DEL ARDUINO!:', data);
             const record = await this.sensorsService.create(data);
             if (this.server && this.server.clients) {
                 for (const client of this.server.clients) {
@@ -38,7 +39,7 @@ let SensorsGateway = class SensorsGateway {
             return record;
         }
         catch (error) {
-            const err = error;
+            console.error('ERROR AL GUARDAR LECTURA DE PRESIÓN:', error);
         }
     }
     handleSetNewThreshold(data) {
@@ -54,6 +55,24 @@ let SensorsGateway = class SensorsGateway {
             }
         });
         return { status: 'success', threshold: data.threshold };
+    }
+    async handleGetThreshold(data) {
+        const threshold = await this.sensorsService.getLatestThreshold();
+        this.server.clients.forEach((client) => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify({
+                    event: 'current_threshold',
+                    data: { threshold }
+                }));
+            }
+        });
+    }
+    handleCurrentThreshold(data) {
+        this.server.clients.forEach((client) => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify({ event: 'current_threshold', data }));
+            }
+        });
     }
 };
 exports.SensorsGateway = SensorsGateway;
@@ -75,6 +94,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], SensorsGateway.prototype, "handleSetNewThreshold", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('get_threshold'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SensorsGateway.prototype, "handleGetThreshold", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('current_threshold'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], SensorsGateway.prototype, "handleCurrentThreshold", null);
 exports.SensorsGateway = SensorsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({ cors: true }),
     __metadata("design:paramtypes", [sensors_service_1.SensorsService])

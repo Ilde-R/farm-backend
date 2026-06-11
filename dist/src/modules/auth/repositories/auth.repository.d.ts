@@ -5,16 +5,16 @@ export declare class AuthRepository {
     constructor(prisma: PrismaService);
     register(data: Prisma.UserCreateInput): Promise<{
         id: string;
-        username: string;
         email: string;
+        username: string;
     }>;
     findUsername(email: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        email: string;
         tenantId: string | null;
         username: string;
-        email: string;
         password: string;
     } | null>;
     createSession(userId: string, refreshToken: string, expiresAt: Date): Promise<{

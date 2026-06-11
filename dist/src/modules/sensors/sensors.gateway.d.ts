@@ -11,4 +11,6 @@ export declare class SensorsGateway {
         status: string;
         threshold: number;
     };
+    handleGetThreshold(data: any): Promise<void>;
+    handleCurrentThreshold(data: any): void;
 }

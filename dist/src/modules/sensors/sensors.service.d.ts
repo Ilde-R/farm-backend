@@ -5,5 +5,6 @@ import { SensorsRepository } from './repositories/sensors.repository';
 export declare class SensorsService extends BaseService<any, CreateSensorDto, UpdateSensorDto> {
     private readonly sensorsRepository;
     constructor(sensorsRepository: SensorsRepository);
-    checkBlowerPressure(data: CreateSensorDto): Promise<any>;
+    create(data: CreateSensorDto): Promise<any>;
+    getLatestThreshold(blowerId?: string): Promise<number>;
 }

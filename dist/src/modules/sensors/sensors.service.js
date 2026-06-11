@@ -19,11 +19,32 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
         super(sensorsRepository);
         this.sensorsRepository = sensorsRepository;
     }
-    async checkBlowerPressure(data) {
+    async create(data) {
         if (data.psi < 2.0) {
             console.log(`¡ALERTA! El soplador ${data.blowerId} perdió presión.`);
         }
-        return super.create(data);
+        if (!data.tenantId || !data.blowerId) {
+            console.error('Faltan datos de tenantId o blowerId');
+            return null;
+        }
+        const config = await this.sensorsRepository.upsertBlowerConfig(data.tenantId, data.blowerId, data.currentThreshold);
+        const readingData = {
+            tenantId: data.tenantId,
+            blowerConfigId: config.id,
+            psi: data.psi,
+            isAlert: data.isAlert ?? false,
+        };
+        return super.create(readingData);
+    }
+    async getLatestThreshold(blowerId) {
+        if (blowerId) {
+            const config = await this.sensorsRepository.getBlowerConfig(blowerId);
+            return config?.currentThreshold ?? 2.0;
+        }
+        else {
+            const config = await this.sensorsRepository.getFirstBlowerConfig();
+            return config?.currentThreshold ?? 2.0;
+        }
     }
 };
 exports.SensorsService = SensorsService;
