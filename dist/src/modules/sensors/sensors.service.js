@@ -21,23 +21,40 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
     }
     async registerBlower(tenantId, blowerId) {
         const config = await this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
+        console.log(`Soplador registrado: ${blowerId} -> configId: ${config.id}`);
         return config;
     }
+    lastSaveTime = new Map();
+    lastAlertState = new Map();
     async create(data) {
-        if (!data.blowerConfigId || !data.tenantId) {
+        if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
+            console.error('Faltan datos requeridos. Datos recibidos:', data);
             return null;
         }
-        if (data.psi < (data.currentThreshold ?? 2.0)) {
+        const currentThreshold = data.currentThreshold ?? 2.0;
+        const isAlert = data.psi <= currentThreshold;
+        if (isAlert) {
+            console.log(`¡ALERTA! Soplador perdió presión: ${data.psi} PSI`);
         }
-        if (data.currentThreshold !== undefined && data.blowerId) {
+        if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
         }
-        return this.sensorsRepository.createReading({
-            tenant: { connect: { id: data.tenantId } },
-            blowerConfig: { connect: { id: data.blowerConfigId } },
-            psi: data.psi,
-            isAlert: data.isAlert ?? false,
-        });
+        const now = Date.now();
+        const blowerId = data.blowerId;
+        const lastSave = this.lastSaveTime.get(blowerId) || 0;
+        const lastAlert = this.lastAlertState.get(blowerId) ?? false;
+        const alertChanged = isAlert !== lastAlert;
+        if (now - lastSave >= 300000 || alertChanged) {
+            this.lastSaveTime.set(blowerId, now);
+            this.lastAlertState.set(blowerId, isAlert);
+            return this.sensorsRepository.createReading({
+                tenant: { connect: { id: data.tenantId } },
+                blowerConfig: { connect: { id: data.blowerConfigId } },
+                psi: data.psi,
+                isAlert: isAlert,
+            });
+        }
+        return null;
     }
     async getLatestThreshold(blowerId) {
         if (blowerId) {

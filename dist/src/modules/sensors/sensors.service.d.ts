@@ -12,6 +12,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, Up
         blowerId: string;
         currentThreshold: number;
     }>;
+    private lastSaveTime;
+    private lastAlertState;
     create(data: CreateSensorDto): Promise<{
         id: string;
         createdAt: Date;
