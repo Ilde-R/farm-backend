@@ -15,7 +15,6 @@ export class SensorsGateway {
   server!: Server;
   constructor(private readonly sensorsService: SensorsService) {}
 
-  // El Arduino se registra al conectarse (respaldo por si Flutter no lo hizo)
   @SubscribeMessage('register_blower')
   async handleRegisterBlower(
     @MessageBody() data: { tenantId: string; blowerId: string },
@@ -28,7 +27,6 @@ export class SensorsGateway {
         data.blowerId,
       );
 
-      // Le devolvemos el blowerConfigId y el umbral al Arduino
       client.send(
         JSON.stringify({
           event: 'blower_registered',
@@ -48,7 +46,6 @@ export class SensorsGateway {
     try {
       console.log('¡NUEVO MENSAJE RECIBIDO DEL ARDUINO!:', data);
 
-      // Guardamos en la base de datos
       const record = await this.sensorsService.create(data);
 
       if (this.server && this.server.clients) {
