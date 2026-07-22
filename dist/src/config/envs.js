@@ -41,6 +41,7 @@ const envsSchema = joi
     PORT: joi.number().required(),
     DATABASE_URL: joi.string().required(),
     JWT_SECRET: joi.string().required(),
+    CORS_ORIGINS: joi.string().required(),
 })
     .unknown(true);
 const { error, value } = envsSchema.validate(process.env);
@@ -52,5 +53,6 @@ exports.envs = {
     port: envVars.PORT,
     databaseUrl: envVars.DATABASE_URL,
     jwtSecret: envVars.JWT_SECRET,
+    corsOrigins: envVars.CORS_ORIGINS.split(',').map((o) => o.trim()),
 };
 //# sourceMappingURL=envs.js.map

@@ -14,20 +14,26 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var SensorsGateway_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SensorsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
+const common_1 = require("@nestjs/common");
+const common_2 = require("@nestjs/common");
 const sensors_service_1 = require("./sensors.service");
 const ws_1 = require("ws");
 const ws_2 = __importDefault(require("ws"));
-let SensorsGateway = class SensorsGateway {
+const ws_auth_guard_1 = require("../auth/guards/ws-auth.guard");
+let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     sensorsService;
+    logger = new common_2.Logger(SensorsGateway_1.name);
     server;
     constructor(sensorsService) {
         this.sensorsService = sensorsService;
     }
     async handleRegisterBlower(data, client) {
         try {
+            this.logger.log(`Registro de soplador solicitado: ${data.blowerId}`);
             const config = await this.sensorsService.registerBlower(data.tenantId, data.blowerId);
             client.send(JSON.stringify({
                 event: 'blower_registered',
@@ -37,10 +43,13 @@ let SensorsGateway = class SensorsGateway {
                 },
             }));
         }
-        catch (error) { }
+        catch (error) {
+            this.logger.error(`Error al registrar soplador: ${error instanceof Error ? error.message : 'Unknown'}`);
+        }
     }
     async create(data) {
         try {
+            this.logger.log(`Lectura de presión recibida: ${data?.blowerId}`);
             const record = await this.sensorsService.create(data);
             if (this.server && this.server.clients) {
                 for (const client of this.server.clients) {
@@ -55,6 +64,7 @@ let SensorsGateway = class SensorsGateway {
             return record;
         }
         catch (error) {
+            this.logger.error(`Error al guardar lectura de presión: ${error instanceof Error ? error.message : 'Unknown'}`);
         }
     }
     handleSetNewThreshold(data) {
@@ -131,7 +141,8 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], SensorsGateway.prototype, "handleCurrentThreshold", null);
-exports.SensorsGateway = SensorsGateway = __decorate([
+exports.SensorsGateway = SensorsGateway = SensorsGateway_1 = __decorate([
+    (0, common_1.UseGuards)(ws_auth_guard_1.WsAuthGuard),
     (0, websockets_1.WebSocketGateway)({ cors: true }),
     __metadata("design:paramtypes", [sensors_service_1.SensorsService])
 ], SensorsGateway);

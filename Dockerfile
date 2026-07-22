@@ -28,6 +28,8 @@ COPY --from=build /usr/src/app/package*.json ./
 COPY --from=build /usr/src/app/prisma ./prisma
 COPY --from=build /usr/src/app/prisma.config.ts ./
 
+USER node
+
 EXPOSE 3000
 
 CMD [ "node", "dist/src/main.js" ]

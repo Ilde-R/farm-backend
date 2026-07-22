@@ -22,6 +22,9 @@ let AuthGuard = class AuthGuard {
         this.reflector = reflector;
     }
     async canActivate(context) {
+        if (context.getType() === 'ws') {
+            return true;
+        }
         const isPublic = this.reflector.getAllAndOverride(public_decorator_1.IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass(),

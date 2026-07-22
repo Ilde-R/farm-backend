@@ -35,8 +35,8 @@ let AuthController = class AuthController {
     refresh(refreshToken) {
         return this.authService.refresh(refreshToken);
     }
-    logout(userId) {
-        return this.authService.logout(userId);
+    logout(req) {
+        return this.authService.logout(req.user.sub);
     }
 };
 exports.AuthController = AuthController;
@@ -77,9 +77,9 @@ __decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Cerrar sesión' }),
-    __param(0, (0, common_1.Body)('userId')),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([

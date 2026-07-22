@@ -71,13 +71,26 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+    await this.authRepository.invalidateSession(refreshToken.refreshToken);
+
     const user = await this.prisma.user.findUnique({
       where: { id: session.userId },
     });
     if (!user) throw new UnauthorizedException('User not found');
 
+    const newRefreshToken = randomBytes(64).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await this.authRepository.createSession(
+      user.id,
+      newRefreshToken,
+      expiresAt,
+    );
+
     const payload = { sub: user.id, email: user.email };
-    return { access_token: this.jwtService.sign(payload) };
+    return {
+      access_token: this.jwtService.sign(payload),
+      refresh_token: newRefreshToken,
+    };
   }
 
   async logout(userId: string) {

@@ -6,9 +6,7 @@ export class SensorsController {
   constructor(private readonly sensorsService: SensorsService) {}
 
   @Post('register-blower')
-  async registerBlower(
-    @Body() body: { tenantId: string; blowerId: string },
-  ) {
+  async registerBlower(@Body() body: { tenantId: string; blowerId: string }) {
     const config = await this.sensorsService.registerBlower(
       body.tenantId,
       body.blowerId,

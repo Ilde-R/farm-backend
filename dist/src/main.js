@@ -49,7 +49,10 @@ async function bootstrap() {
         spec: { content: document },
     }));
     app.useWebSocketAdapter(new platform_ws_1.WsAdapter(app));
-    app.enableCors();
+    app.enableCors({
+        origin: config_1.envs.corsOrigins,
+        credentials: true,
+    });
     await app.listen(config_1.envs.port);
     logger.log(`Backend running on port ${config_1.envs.port}`);
 }

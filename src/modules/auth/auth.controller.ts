@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -6,6 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Public } from './decorators/public.decorator';
 import { Throttle } from '@nestjs/throttler';
+import type { RequestWithUser } from './interfaces/request-with-user.interface';
 
 @ApiTags('Autenticación')
 @Controller('auth')
@@ -31,7 +39,7 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Public() //pendiente
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Renovar el token de acceso' })
@@ -42,7 +50,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cerrar sesión' })
-  logout(@Body('userId') userId: string) {
-    return this.authService.logout(userId);
+  logout(@Req() req: RequestWithUser) {
+    return this.authService.logout(req.user.sub);
   }
 }

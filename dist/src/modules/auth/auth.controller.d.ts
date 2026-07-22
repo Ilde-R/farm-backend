@@ -2,16 +2,17 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import type { RequestWithUser } from './interfaces/request-with-user.interface';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
     register(registerDto: RegisterDto): Promise<{
         id: string;
-        username: string;
-        email: string;
+        tenantId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        tenantId: string | null;
+        username: string;
+        email: string;
     }>;
     login(loginDto: LoginDto): Promise<{
         id: string;
@@ -22,8 +23,9 @@ export declare class AuthController {
     }>;
     refresh(refreshToken: RefreshTokenDto): Promise<{
         access_token: string;
+        refresh_token: string;
     }>;
-    logout(userId: string): Promise<{
+    logout(req: RequestWithUser): Promise<{
         message: string;
     }>;
 }

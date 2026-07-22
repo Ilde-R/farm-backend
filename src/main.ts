@@ -59,7 +59,10 @@ async function bootstrap() {
   );
 
   app.useWebSocketAdapter(new WsAdapter(app));
-  app.enableCors();
+  app.enableCors({
+    origin: envs.corsOrigins,
+    credentials: true,
+  });
   await app.listen(envs.port);
   logger.log(`Backend running on port ${envs.port}`);
 }

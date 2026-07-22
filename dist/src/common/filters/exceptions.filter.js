@@ -30,7 +30,9 @@ let ExceptionsFilter = ExceptionsFilter_1 = class ExceptionsFilter {
             ? exception.getResponse()
             : { message: 'Internal server error' };
         const message = typeof exceptionResponse === 'object' && exceptionResponse !== null
-            ? exceptionResponse.message || exceptionResponse.error || exceptionResponse
+            ? exceptionResponse.message ||
+                exceptionResponse.error ||
+                exceptionResponse
             : exceptionResponse;
         if (httpStatus >= 500) {
             this.logger.error(`Error: ${exception instanceof Error ? exception.message : 'Unknown'}\nStack: ${exception instanceof Error ? exception.stack : ''}`);
@@ -42,9 +44,7 @@ let ExceptionsFilter = ExceptionsFilter_1 = class ExceptionsFilter {
             statusCode: httpStatus,
             timestamp: new Date().toISOString(),
             path: httpAdapter.getRequestUrl(ctx.getRequest()),
-            message: isProduction && httpStatus >= 500
-                ? 'Internal server error'
-                : message,
+            message: isProduction && httpStatus >= 500 ? 'Internal server error' : message,
             ...(isProduction
                 ? {}
                 : {

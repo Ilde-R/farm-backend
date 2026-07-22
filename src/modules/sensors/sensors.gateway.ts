@@ -5,12 +5,18 @@ import {
   WebSocketServer,
   ConnectedSocket,
 } from '@nestjs/websockets';
+import { UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SensorsService } from './sensors.service';
 import { Server } from 'ws';
 import WebSocket from 'ws';
+import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 
+@UseGuards(WsAuthGuard)
 @WebSocketGateway({ cors: true })
 export class SensorsGateway {
+  private readonly logger = new Logger(SensorsGateway.name);
+
   @WebSocketServer()
   server!: Server;
   constructor(private readonly sensorsService: SensorsService) {}
@@ -21,6 +27,7 @@ export class SensorsGateway {
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
+      this.logger.log(`Registro de soplador solicitado: ${data.blowerId}`);
       const config = await this.sensorsService.registerBlower(
         data.tenantId,
         data.blowerId,
@@ -35,12 +42,17 @@ export class SensorsGateway {
           },
         }),
       );
-    } catch (error) {}
+    } catch (error) {
+      this.logger.error(
+        `Error al registrar soplador: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
   }
 
   @SubscribeMessage('pressure_reading')
   async create(@MessageBody() data: any) {
     try {
+      this.logger.log(`Lectura de presión recibida: ${data?.blowerId}`);
       const record = await this.sensorsService.create(data);
 
       if (this.server && this.server.clients) {
@@ -57,6 +69,9 @@ export class SensorsGateway {
       }
       return record;
     } catch (error) {
+      this.logger.error(
+        `Error al guardar lectura de presión: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
     }
   }
 

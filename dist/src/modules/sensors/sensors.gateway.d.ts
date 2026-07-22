@@ -3,6 +3,7 @@ import { Server } from 'ws';
 import WebSocket from 'ws';
 export declare class SensorsGateway {
     private readonly sensorsService;
+    private readonly logger;
     server: Server;
     constructor(sensorsService: SensorsService);
     handleRegisterBlower(data: {

@@ -1,4 +1,4 @@
-import { PaginatedResult } from "../interface/paginated-result.interface";
+import { PaginatedResult } from '../interface/paginated-result.interface';
 
 export function buildPaginatedResponse<T>(
   data: T[],
