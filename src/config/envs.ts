@@ -5,14 +5,12 @@ interface EnvVars {
   PORT: number;
   DATABASE_URL: string;
   JWT_SECRET: string;
-  CORS_ORIGINS: string;
 }
 const envsSchema = joi
   .object({
     PORT: joi.number().required(),
     DATABASE_URL: joi.string().required(),
     JWT_SECRET: joi.string().required(),
-    CORS_ORIGINS: joi.string().required(),
   })
   .unknown(true);
 
@@ -28,5 +26,4 @@ export const envs = {
   port: envVars.PORT,
   databaseUrl: envVars.DATABASE_URL,
   jwtSecret: envVars.JWT_SECRET,
-  corsOrigins: envVars.CORS_ORIGINS.split(',').map((o) => o.trim()),
 };

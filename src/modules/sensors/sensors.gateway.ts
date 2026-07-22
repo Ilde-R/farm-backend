@@ -13,7 +13,7 @@ import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 
 @UseGuards(WsAuthGuard)
-@WebSocketGateway({ cors: true })
+@WebSocketGateway()
 export class SensorsGateway {
   private readonly logger = new Logger(SensorsGateway.name);
 
