@@ -11,23 +11,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthRepository = void 0;
 const common_1 = require("@nestjs/common");
-const auth_select_1 = require("../selects/auth.select");
 const prisma_service_1 = require("../../../prisma/prisma.service");
 let AuthRepository = class AuthRepository {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async register(data) {
+    async register(userData, passwordHash) {
         return this.prisma.user.create({
-            data,
-            select: auth_select_1.authSelect,
+            data: {
+                ...userData,
+                credential: {
+                    create: {
+                        password: passwordHash,
+                    },
+                },
+            },
         });
     }
-    async findUsername(email) {
+    async findForLogin(email) {
         return this.prisma.user.findUnique({
-            where: {
-                email,
+            where: { email },
+            include: {
+                credential: true,
             },
         });
     }

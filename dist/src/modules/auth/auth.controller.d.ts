@@ -7,7 +7,10 @@ export declare class AuthController {
     constructor(authService: AuthService);
     register(registerDto: RegisterDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         email: string;
+        tenantId: string | null;
         username: string;
     }>;
     login(loginDto: LoginDto): Promise<{

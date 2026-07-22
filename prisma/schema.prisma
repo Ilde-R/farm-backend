@@ -28,24 +28,34 @@ model Tenant {
 
 model User {
   id     String @id @default(uuid()) @db.Uuid
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   tenantId String? @db.Uuid
   username String
   email    String @unique
-  password String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   sessions Session[]
+  credential Credential?
 
+  @@index([tenantId])
   @@map("users")
+}
+
+model Credential {
+  id String @id @default(uuid()) @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @db.Uuid
+
+  password String
+  @@map("credentials")
 }
 
 model Session {
   id           String  @id @default(uuid()) @db.Uuid
-  user         User    @relation(fields: [userId], references: [id])
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String  @db.Uuid
   refreshToken String  @unique
   isActive     Boolean @default(true)
@@ -60,30 +70,36 @@ model Session {
 
 model BlowerConfig {
   id String   @id @default(uuid()) @db.Uuid
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantId String   @db.Uuid
   
-  blowerId String @unique
+  blowerId String
   name String? 
   currentThreshold Float @default(2.0)
 
   pressureReadings PressureReading[]
-
+  
+  @@unique([tenantId, blowerId])
   @@map("blower_config")
 }
 
 model PressureReading {
-  id String @id @default(uuid()) @db.Uuid
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  id BigInt @id @default(autoincrement())
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantId String @db.Uuid
   
-  blowerConfig BlowerConfig? @relation(fields: [blowerConfigId], references: [id])
+  blowerConfig   BlowerConfig? @relation(fields: [blowerConfigId], references: [id], onDelete: SetNull)
   blowerConfigId String? @db.Uuid 
   
   psi Float
   isAlert Boolean @default(false)
   
   createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([blowerConfigId])
+  @@index([createdAt])
+  @@index([tenantId, isAlert])
 
   @@map("pressure_reading")
 }

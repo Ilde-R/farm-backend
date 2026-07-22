@@ -59,20 +59,19 @@ let AuthService = class AuthService {
         this.prisma = prisma;
     }
     async register(registerDto) {
-        const exist = await this.authRepository.findUsername(registerDto.email);
+        const exist = await this.authRepository.findForLogin(registerDto.email);
         if (exist)
-            throw new common_1.ConflictException('Email ready exists');
-        const hashed = await bcrypt.hash(registerDto.password, 10);
-        return this.authRepository.register({
-            ...registerDto,
-            password: hashed,
-        });
+            throw new common_1.ConflictException('Email already exists');
+        const salt = await bcrypt.genSalt();
+        const { password, ...userData } = registerDto;
+        const hash = await bcrypt.hash(password, salt);
+        return this.authRepository.register(userData, hash);
     }
     async login(loginDto) {
-        const user = await this.authRepository.findUsername(loginDto.email);
-        if (!user)
+        const user = await this.authRepository.findForLogin(loginDto.email);
+        if (!user || !user.credential)
             throw new common_1.UnauthorizedException('Credentials not valid');
-        const valid = await bcrypt.compare(loginDto.password, user.password);
+        const valid = await bcrypt.compare(loginDto.password, user.credential.password);
         if (!valid)
             throw new common_1.UnauthorizedException('Credentials not valid');
         const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');

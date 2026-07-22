@@ -40,12 +40,18 @@ async function seedUsers(prisma) {
     const hashedPassword = await bcrypt.hash('password123', 10);
     await prisma.user.upsert({
         where: { email: 'admin@example.com' },
-        update: { tenantId: tenant_seed_1.MAIN_TENANT_ID },
+        update: {
+            tenantId: tenant_seed_1.MAIN_TENANT_ID,
+        },
         create: {
             username: 'admin',
             email: 'admin@example.com',
-            password: hashedPassword,
             tenantId: tenant_seed_1.MAIN_TENANT_ID,
+            credential: {
+                create: {
+                    password: hashedPassword,
+                },
+            },
         },
     });
     console.log('Usuario admin creado y enlazado al tenant principal.');

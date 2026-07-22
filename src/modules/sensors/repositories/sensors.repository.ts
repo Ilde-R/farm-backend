@@ -14,9 +14,18 @@ export class SensorsRepository extends BaseRepository<
     super(prisma.pressureReading);
   }
 
-  async upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number) {
+  async upsertBlowerConfig(
+    tenantId: string,
+    blowerId: string,
+    currentThreshold?: number,
+  ) {
     return this.prisma.blowerConfig.upsert({
-      where: { blowerId },
+      where: {
+        tenantId_blowerId: {
+          tenantId,
+          blowerId,
+        },
+      },
       update: {},
       create: {
         blowerId,
@@ -33,14 +42,21 @@ export class SensorsRepository extends BaseRepository<
     });
   }
 
-  async getBlowerConfig(blowerId: string) {
+  async getBlowerConfig(tenantId: string, blowerId: string) {
     return this.prisma.blowerConfig.findUnique({
-      where: { blowerId },
+      where: {
+        tenantId_blowerId: {
+          tenantId,
+          blowerId,
+        },
+      },
     });
   }
 
-  async getFirstBlowerConfig() {
-    return this.prisma.blowerConfig.findFirst();
+  async getFirstBlowerConfig(tenantId: string) {
+    return this.prisma.blowerConfig.findFirst({
+      where: { tenantId },
+    });
   }
 
   async createReading(data: any) {

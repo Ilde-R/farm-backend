@@ -21,22 +21,26 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const exist = await this.authRepository.findUsername(registerDto.email);
+    const exist = await this.authRepository.findForLogin(registerDto.email);
 
-    if (exist) throw new ConflictException('Email ready exists');
+    if (exist) throw new ConflictException('Email already exists');
 
-    const hashed = await bcrypt.hash(registerDto.password, 10);
-    return this.authRepository.register({
-      ...registerDto,
-      password: hashed,
-    });
+    const salt = await bcrypt.genSalt();
+    const { password, ...userData } = registerDto;
+    const hash = await bcrypt.hash(password, salt);
+
+    return this.authRepository.register(userData, hash);
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.authRepository.findUsername(loginDto.email);
-    if (!user) throw new UnauthorizedException('Credentials not valid');
+    const user = await this.authRepository.findForLogin(loginDto.email);
+    if (!user || !user.credential)
+      throw new UnauthorizedException('Credentials not valid');
 
-    const valid = await bcrypt.compare(loginDto.password, user.password);
+    const valid = await bcrypt.compare(
+      loginDto.password,
+      user.credential.password,
+    );
     if (!valid) throw new UnauthorizedException('Credentials not valid');
 
     const refreshToken = randomBytes(64).toString('hex');

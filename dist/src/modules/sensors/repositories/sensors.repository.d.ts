@@ -19,14 +19,14 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         blowerId: string;
         currentThreshold: number;
     }>;
-    getBlowerConfig(blowerId: string): Promise<{
+    getBlowerConfig(tenantId: string, blowerId: string): Promise<{
         id: string;
         name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
     } | null>;
-    getFirstBlowerConfig(): Promise<{
+    getFirstBlowerConfig(tenantId: string): Promise<{
         id: string;
         name: string | null;
         tenantId: string;
@@ -34,7 +34,7 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         currentThreshold: number;
     } | null>;
     createReading(data: any): Promise<{
-        id: string;
+        id: bigint;
         createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;

@@ -3,20 +3,28 @@ import { PrismaService } from '../../../prisma/prisma.service';
 export declare class AuthRepository {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    register(data: Prisma.UserCreateInput): Promise<{
-        id: string;
-        email: string;
-        username: string;
-    }>;
-    findUsername(email: string): Promise<{
+    register(userData: Omit<Prisma.UserCreateInput, 'credential'>, passwordHash: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
         tenantId: string | null;
         username: string;
-        password: string;
-    } | null>;
+    }>;
+    findForLogin(email: string): Promise<({
+        credential: {
+            id: string;
+            password: string;
+            userId: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string;
+        tenantId: string | null;
+        username: string;
+    }) | null>;
     createSession(userId: string, refreshToken: string, expiresAt: Date): Promise<{
         id: string;
         isActive: boolean;

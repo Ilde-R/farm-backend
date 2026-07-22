@@ -7,14 +7,20 @@ export async function seedUsers(prisma: PrismaClient) {
 
   await prisma.user.upsert({
     where: { email: 'admin@example.com' },
-    update: { tenantId: MAIN_TENANT_ID },
+    update: {
+      tenantId: MAIN_TENANT_ID,
+    },
     create: {
       username: 'admin',
       email: 'admin@example.com',
-      password: hashedPassword,
       tenantId: MAIN_TENANT_ID,
+      credential: {
+        create: {
+          password: hashedPassword,
+        },
+      },
     },
   });
-  
+
   console.log('Usuario admin creado y enlazado al tenant principal.');
 }

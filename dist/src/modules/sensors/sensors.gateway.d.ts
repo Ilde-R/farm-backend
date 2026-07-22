@@ -10,7 +10,7 @@ export declare class SensorsGateway {
         blowerId: string;
     }, client: WebSocket): Promise<void>;
     create(data: any): Promise<{
-        id: string;
+        id: bigint;
         createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;

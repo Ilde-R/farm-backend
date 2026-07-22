@@ -56,13 +56,13 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
         }
         return null;
     }
-    async getLatestThreshold(blowerId) {
+    async getLatestThreshold(tenantId, blowerId) {
         if (blowerId) {
-            const config = await this.sensorsRepository.getBlowerConfig(blowerId);
+            const config = await this.sensorsRepository.getBlowerConfig(tenantId, blowerId);
             return config?.currentThreshold ?? 2.0;
         }
         else {
-            const config = await this.sensorsRepository.getFirstBlowerConfig();
+            const config = await this.sensorsRepository.getFirstBlowerConfig(tenantId);
             return config?.currentThreshold ?? 2.0;
         }
     }

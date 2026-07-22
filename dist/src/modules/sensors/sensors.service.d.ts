@@ -15,12 +15,12 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, Up
     private lastSaveTime;
     private lastAlertState;
     create(data: CreateSensorDto): Promise<{
-        id: string;
+        id: bigint;
         createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;
         psi: number;
         isAlert: boolean;
     } | null>;
-    getLatestThreshold(blowerId?: string): Promise<number>;
+    getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
 }

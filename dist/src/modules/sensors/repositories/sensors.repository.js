@@ -21,7 +21,12 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
     }
     async upsertBlowerConfig(tenantId, blowerId, currentThreshold) {
         return this.prisma.blowerConfig.upsert({
-            where: { blowerId },
+            where: {
+                tenantId_blowerId: {
+                    tenantId,
+                    blowerId,
+                },
+            },
             update: {},
             create: {
                 blowerId,
@@ -36,13 +41,20 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
             data: { currentThreshold: threshold },
         });
     }
-    async getBlowerConfig(blowerId) {
+    async getBlowerConfig(tenantId, blowerId) {
         return this.prisma.blowerConfig.findUnique({
-            where: { blowerId },
+            where: {
+                tenantId_blowerId: {
+                    tenantId,
+                    blowerId,
+                },
+            },
         });
     }
-    async getFirstBlowerConfig() {
-        return this.prisma.blowerConfig.findFirst();
+    async getFirstBlowerConfig(tenantId) {
+        return this.prisma.blowerConfig.findFirst({
+            where: { tenantId },
+        });
     }
     async createReading(data) {
         return this.prisma.pressureReading.create({ data });
