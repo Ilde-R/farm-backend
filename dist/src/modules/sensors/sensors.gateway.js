@@ -143,7 +143,7 @@ __decorate([
 ], SensorsGateway.prototype, "handleCurrentThreshold", null);
 exports.SensorsGateway = SensorsGateway = SensorsGateway_1 = __decorate([
     (0, common_1.UseGuards)(ws_auth_guard_1.WsAuthGuard),
-    (0, websockets_1.WebSocketGateway)({ cors: true }),
+    (0, websockets_1.WebSocketGateway)(),
     __metadata("design:paramtypes", [sensors_service_1.SensorsService])
 ], SensorsGateway);
 //# sourceMappingURL=sensors.gateway.js.map

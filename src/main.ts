@@ -44,6 +44,7 @@ async function bootstrap() {
     .setDescription('Sistema de sensores')
     .setVersion('0.1.0')
     .addTag('granja')
+    .addBearerAuth()
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

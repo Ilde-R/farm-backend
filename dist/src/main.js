@@ -41,6 +41,7 @@ async function bootstrap() {
         .setDescription('Sistema de sensores')
         .setVersion('0.1.0')
         .addTag('granja')
+        .addBearerAuth()
         .build();
     const documentFactory = () => swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api-swagger', app, documentFactory);
@@ -49,10 +50,6 @@ async function bootstrap() {
         spec: { content: document },
     }));
     app.useWebSocketAdapter(new platform_ws_1.WsAdapter(app));
-    app.enableCors({
-        origin: config_1.envs.corsOrigins,
-        credentials: true,
-    });
     await app.listen(config_1.envs.port);
     logger.log(`Backend running on port ${config_1.envs.port}`);
 }

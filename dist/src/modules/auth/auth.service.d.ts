@@ -11,11 +11,11 @@ export declare class AuthService {
     constructor(authRepository: AuthRepository, jwtService: JwtService, prisma: PrismaService);
     register(registerDto: RegisterDto): Promise<{
         id: string;
-        tenantId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        username: string;
         email: string;
+        tenantId: string | null;
+        username: string;
     }>;
     login(loginDto: LoginDto): Promise<{
         id: string;

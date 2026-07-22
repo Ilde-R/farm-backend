@@ -3,5 +3,4 @@ export declare const envs: {
     port: number;
     databaseUrl: string;
     jwtSecret: string;
-    corsOrigins: string[];
 };
