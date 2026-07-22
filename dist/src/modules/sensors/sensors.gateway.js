@@ -28,7 +28,6 @@ let SensorsGateway = class SensorsGateway {
     }
     async handleRegisterBlower(data, client) {
         try {
-            console.log('Registro de soplador solicitado:', data);
             const config = await this.sensorsService.registerBlower(data.tenantId, data.blowerId);
             client.send(JSON.stringify({
                 event: 'blower_registered',
@@ -38,13 +37,10 @@ let SensorsGateway = class SensorsGateway {
                 },
             }));
         }
-        catch (error) {
-            console.error('ERROR AL REGISTRAR SOPLADOR:', error);
-        }
+        catch (error) { }
     }
     async create(data) {
         try {
-            console.log('¡NUEVO MENSAJE RECIBIDO DEL ARDUINO!:', data);
             const record = await this.sensorsService.create(data);
             if (this.server && this.server.clients) {
                 for (const client of this.server.clients) {
@@ -59,7 +55,6 @@ let SensorsGateway = class SensorsGateway {
             return record;
         }
         catch (error) {
-            console.error('ERROR AL GUARDAR LECTURA DE PRESIÓN:', error);
         }
     }
     handleSetNewThreshold(data) {
@@ -82,7 +77,7 @@ let SensorsGateway = class SensorsGateway {
             if (client.readyState === 1) {
                 client.send(JSON.stringify({
                     event: 'current_threshold',
-                    data: { threshold }
+                    data: { threshold },
                 }));
             }
         });

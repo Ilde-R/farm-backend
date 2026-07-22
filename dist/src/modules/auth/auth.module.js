@@ -9,28 +9,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
-const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
 const auth_repository_1 = require("./repositories/auth.repository");
 const auth_controller_1 = require("./auth.controller");
+const users_module_1 = require("../users/users.module");
+const config_1 = require("../../config");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule,
-            jwt_1.JwtModule.registerAsync({
-                imports: [config_1.ConfigModule],
-                inject: [config_1.ConfigService],
-                useFactory: (configService) => ({
-                    secret: configService.get('JWT_SECRET'),
-                    signOptions: { expiresIn: '15m' },
-                }),
+            users_module_1.UsersModule,
+            jwt_1.JwtModule.register({
+                global: true,
+                secret: config_1.envs.jwtSecret,
+                signOptions: { expiresIn: '60s' },
             }),
         ],
-        controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService, auth_repository_1.AuthRepository],
+        controllers: [auth_controller_1.AuthController],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);

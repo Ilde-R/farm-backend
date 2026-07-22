@@ -11,11 +11,11 @@ export declare class SensorsGateway {
     }, client: WebSocket): Promise<void>;
     create(data: any): Promise<{
         id: bigint;
+        psi: number;
+        isAlert: boolean;
         createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;
-        psi: number;
-        isAlert: boolean;
     } | null | undefined>;
     handleSetNewThreshold(data: {
         threshold: number;
