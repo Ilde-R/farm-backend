@@ -64,17 +64,15 @@ export class SensorsGateway
 
   handleConnection(client: WebSocket) {
     const info = getClientInfo(client);
+    this.logger.log(`WS attempt: ${info ? `OK blowerId=${info.blowerId} tenantId=${info.tenantId}` : 'NO INFO'}`);
     if (info) {
       this.connectedClients.set(client, info);
-      this.logger.log(`Client connected: ${info.blowerId || info.tenantId}`);
     }
   }
 
   handleDisconnect(client: WebSocket) {
     const info = this.connectedClients.get(client);
-    if (info) {
-      this.logger.log(`Client disconnected: ${info.blowerId || info.tenantId}`);
-    }
+    this.logger.log(`WS disconnect: ${info?.blowerId || 'unknown'}`);
     this.connectedClients.delete(client);
   }
 
