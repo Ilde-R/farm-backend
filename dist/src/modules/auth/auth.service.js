@@ -92,7 +92,11 @@ let AuthService = class AuthService {
         const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, refreshToken, expiresAt);
-        const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            tenantId: user.tenantId,
+        };
         return {
             id: user.id,
             username: user.username,
@@ -118,7 +122,11 @@ let AuthService = class AuthService {
         const newRefreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, newRefreshToken, expiresAt);
-        const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            tenantId: user.tenantId,
+        };
         return {
             access_token: this.jwtService.sign(payload),
             refresh_token: newRefreshToken,
