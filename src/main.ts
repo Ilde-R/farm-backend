@@ -60,7 +60,7 @@ async function bootstrap() {
   );
 
   app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(envs.port);
+  await app.listen(envs.port, '0.0.0.0');
   logger.log(`Backend running on port ${envs.port}`);
 }
 bootstrap();
