@@ -96,6 +96,10 @@ export class IotService {
   }
 
   async revokeDeviceKey(key: string) {
+    const existing = await this.prisma.deviceKey.findUnique({ where: { key } });
+    if (!existing) {
+      throw new NotFoundException(`Device key not found`);
+    }
     return this.prisma.deviceKey.update({
       where: { key },
       data: { isActive: false },
