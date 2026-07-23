@@ -16,6 +16,7 @@ import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 import { IncomingMessage } from 'http';
 import { IotService } from '../iot/iot.service';
+import { JwtService } from '@nestjs/jwt';
 
 interface EnrichedClient {
   tenantId: string;
@@ -78,6 +79,7 @@ export class SensorsGateway
   constructor(
     private readonly sensorsService: SensorsService,
     private readonly iotService: IotService,
+    private readonly jwtService: JwtService,
   ) {}
 
   afterInit(server: Server) {
@@ -86,7 +88,34 @@ export class SensorsGateway
     });
   }
 
-  handleConnection(client: WebSocket) {
+  async handleConnection(client: WebSocket) {
+    const req = (client as any).__upgradeReq as IncomingMessage;
+    if (req) {
+      try {
+        const url = new URL(
+          req.url || '/',
+          `http://${req.headers.host || 'localhost'}`,
+        );
+        const token = url.searchParams.get('token');
+        const deviceKey = (url.searchParams.get('key') ||
+          req.headers['key']) as string;
+
+        if (deviceKey) {
+          const device = await this.iotService.validateDeviceKey(deviceKey);
+          if (device) {
+            (client as any).device = { ...device, deviceKey };
+          }
+        } else if (token) {
+          const payload = await this.jwtService.verifyAsync<{
+            sub: string;
+            email: string;
+            tenantId: string;
+          }>(token);
+          (client as any).user = payload;
+        }
+      } catch {}
+    }
+
     const info = getClientInfo(client);
     if (info) {
       this.connectedClients.set(client, info);
