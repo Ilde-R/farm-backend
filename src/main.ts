@@ -42,7 +42,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Granja')
     .setDescription('Sistema de sensores')
-    .setVersion('0.1.1')
+    .setVersion('0.1.2')
     .addTag('granja')
     .addBearerAuth()
     .build();
