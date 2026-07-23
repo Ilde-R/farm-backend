@@ -29,7 +29,8 @@ let WsAuthGuard = class WsAuthGuard {
         }
         const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
         const token = url.searchParams.get('token');
-        const deviceKey = (url.searchParams.get('key') || req.headers['key']);
+        const deviceKey = (url.searchParams.get('key') ||
+            req.headers['key']);
         if (!token && !deviceKey) {
             throw new websockets_1.WsException('Token o device key no proporcionado');
         }

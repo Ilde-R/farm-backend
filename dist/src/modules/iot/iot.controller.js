@@ -22,8 +22,8 @@ let IotController = class IotController {
     constructor(iotService) {
         this.iotService = iotService;
     }
-    async provision(dto) {
-        return this.iotService.provision(dto);
+    async provision(dto, req) {
+        return this.iotService.provision(req.user.tenantId, dto);
     }
     async listDevices(req) {
         return this.iotService.listDeviceKeys(req.user.tenantId);
@@ -39,8 +39,9 @@ __decorate([
         summary: 'Provision a new IoT device and generate a device key',
     }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [provision_dto_1.ProvisionDto]),
+    __metadata("design:paramtypes", [provision_dto_1.ProvisionDto, Object]),
     __metadata("design:returntype", Promise)
 ], IotController.prototype, "provision", null);
 __decorate([

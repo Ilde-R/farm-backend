@@ -13,6 +13,7 @@ export declare class AuthService {
         id: string;
         username: string;
         email: string;
+        tenantId: string;
         access_token: string;
         refresh_token: string;
     }>;
@@ -20,6 +21,7 @@ export declare class AuthService {
         id: string;
         username: string;
         email: string;
+        tenantId: string | null;
         access_token: string;
         refresh_token: string;
     }>;

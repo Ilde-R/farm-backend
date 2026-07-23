@@ -14,8 +14,8 @@ export class IotController {
   @ApiOperation({
     summary: 'Provision a new IoT device and generate a device key',
   })
-  async provision(@Body() dto: ProvisionDto) {
-    return this.iotService.provision(dto);
+  async provision(@Body() dto: ProvisionDto, @Req() req: RequestWithUser) {
+    return this.iotService.provision(req.user.tenantId, dto);
   }
 
   @Get('devices')

@@ -16,7 +16,6 @@ class RegisterDto {
     username;
     email;
     password;
-    tenantId;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -36,12 +35,4 @@ __decorate([
     (0, class_validator_1.MinLength)(8, { message: 'La contraseña debe tener al menos 8 caracteres' }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'ID de la granja a la que pertenece el usuario',
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUUID)(),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "tenantId", void 0);
 //# sourceMappingURL=register.dto.js.map

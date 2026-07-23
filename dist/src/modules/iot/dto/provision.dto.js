@@ -13,17 +13,10 @@ exports.ProvisionDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class ProvisionDto {
-    tenantId;
     blowerId;
     blowerName;
 }
 exports.ProvisionDto = ProvisionDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Tenant UUID' }),
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], ProvisionDto.prototype, "tenantId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'Blower identifier within the tenant' }),
     (0, class_validator_1.IsNotEmpty)(),

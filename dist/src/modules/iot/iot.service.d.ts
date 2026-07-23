@@ -4,7 +4,7 @@ export declare class IotService {
     private readonly prisma;
     private readonly logger;
     constructor(prisma: PrismaService);
-    provision(dto: ProvisionDto): Promise<{
+    provision(tenantId: string, dto: ProvisionDto): Promise<{
         deviceKey: string;
         blowerConfigId: string;
         blowerId: string;

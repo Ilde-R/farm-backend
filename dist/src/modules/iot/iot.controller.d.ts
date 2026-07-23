@@ -4,7 +4,7 @@ import type { RequestWithUser } from '../auth/interfaces/request-with-user.inter
 export declare class IotController {
     private readonly iotService;
     constructor(iotService: IotService);
-    provision(dto: ProvisionDto): Promise<{
+    provision(dto: ProvisionDto, req: RequestWithUser): Promise<{
         deviceKey: string;
         blowerConfigId: string;
         blowerId: string;

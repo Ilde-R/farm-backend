@@ -20,17 +20,17 @@ let IotService = IotService_1 = class IotService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async provision(dto) {
+    async provision(tenantId, dto) {
         const tenant = await this.prisma.tenant.findUnique({
-            where: { id: dto.tenantId },
+            where: { id: tenantId },
         });
         if (!tenant) {
-            throw new common_1.NotFoundException(`Tenant ${dto.tenantId} not found`);
+            throw new common_1.NotFoundException(`Tenant ${tenantId} not found`);
         }
         const blowerConfig = await this.prisma.blowerConfig.upsert({
             where: {
                 tenantId_blowerId: {
-                    tenantId: dto.tenantId,
+                    tenantId: tenantId,
                     blowerId: dto.blowerId,
                 },
             },
@@ -40,7 +40,7 @@ let IotService = IotService_1 = class IotService {
             create: {
                 blowerId: dto.blowerId,
                 name: dto.blowerName,
-                tenant: { connect: { id: dto.tenantId } },
+                tenant: { connect: { id: tenantId } },
                 currentThreshold: 2.0,
             },
         });

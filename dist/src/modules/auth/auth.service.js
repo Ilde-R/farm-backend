@@ -65,15 +65,19 @@ let AuthService = class AuthService {
         const salt = await bcrypt.genSalt();
         const { password, ...userData } = registerDto;
         const hash = await bcrypt.hash(password, salt);
-        const user = await this.authRepository.register(userData, hash);
+        const tenant = await this.prisma.tenant.create({
+            data: { name: registerDto.username },
+        });
+        const user = await this.authRepository.register({ ...userData, tenant: { connect: { id: tenant.id } } }, hash);
         const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, refreshToken, expiresAt);
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, tenantId: tenant.id };
         return {
             id: user.id,
             username: user.username,
             email: user.email,
+            tenantId: tenant.id,
             access_token: this.jwtService.sign(payload),
             refresh_token: refreshToken,
         };
@@ -88,11 +92,12 @@ let AuthService = class AuthService {
         const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, refreshToken, expiresAt);
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
         return {
             id: user.id,
             username: user.username,
             email: user.email,
+            tenantId: user.tenantId,
             access_token: this.jwtService.sign(payload),
             refresh_token: refreshToken,
         };
@@ -113,7 +118,7 @@ let AuthService = class AuthService {
         const newRefreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, newRefreshToken, expiresAt);
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, tenantId: user.tenantId };
         return {
             access_token: this.jwtService.sign(payload),
             refresh_token: newRefreshToken,
