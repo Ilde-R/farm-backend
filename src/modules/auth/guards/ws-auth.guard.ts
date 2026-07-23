@@ -11,6 +11,7 @@ export interface WsClientData {
     blowerId: string;
     tenantId: string;
     currentThreshold: number;
+    deviceKey: string;
   };
 }
 
@@ -52,7 +53,7 @@ export class WsAuthGuard implements CanActivate {
         throw new WsException('Device key inválido o inactivo');
       }
 
-      client.device = device;
+      client.device = { ...device, deviceKey };
       return true;
     }
 

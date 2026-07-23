@@ -15,6 +15,7 @@ import { Server } from 'ws';
 import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 import { IncomingMessage } from 'http';
+import { IotService } from '../iot/iot.service';
 
 interface EnrichedClient {
   tenantId: string;
@@ -27,6 +28,7 @@ interface DeviceAuth {
   blowerId: string;
   blowerConfigId: string;
   currentThreshold: number;
+  deviceKey: string;
 }
 
 interface UserAuth {
@@ -73,7 +75,10 @@ export class SensorsGateway
     return info;
   }
 
-  constructor(private readonly sensorsService: SensorsService) {}
+  constructor(
+    private readonly sensorsService: SensorsService,
+    private readonly iotService: IotService,
+  ) {}
 
   afterInit(server: Server) {
     server.on('connection', (client: WebSocket, request: IncomingMessage) => {
@@ -92,12 +97,28 @@ export class SensorsGateway
     this.connectedClients.delete(client);
   }
 
+  private async isDeviceActive(client: WebSocket): Promise<boolean> {
+    const device = (client as unknown as { device?: DeviceAuth }).device;
+    if (!device?.deviceKey) return true;
+
+    const valid = await this.iotService.validateDeviceKey(device.deviceKey);
+    if (!valid) {
+      this.logger.warn(`Device key revoked mid-session, closing connection`);
+      client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
+      client.close(4001, 'Device key revoked');
+      return false;
+    }
+    return true;
+  }
+
   @SubscribeMessage('register_blower')
   async handleRegisterBlower(
     @MessageBody() data: { tenantId: string; blowerId: string },
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
+      if (!(await this.isDeviceActive(client))) return;
+
       const clientInfo = this.ensureClientInfo(client);
       const tenantId = data.tenantId || clientInfo?.tenantId;
       const blowerId = data.blowerId || clientInfo?.blowerId;
@@ -144,6 +165,8 @@ export class SensorsGateway
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
+      if (!(await this.isDeviceActive(client))) return;
+
       const clientInfo = this.ensureClientInfo(client);
 
       const enriched: CreateSensorDto = {
@@ -179,6 +202,8 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string; threshold: number },
     @ConnectedSocket() client: WebSocket,
   ) {
+    if (!(await this.isDeviceActive(client))) return;
+
     const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;
@@ -212,6 +237,8 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string },
     @ConnectedSocket() client: WebSocket,
   ) {
+    if (!(await this.isDeviceActive(client))) return;
+
     const clientInfo = this.ensureClientInfo(client);
     const tenantId = clientInfo?.tenantId;
     const blowerId = data?.blowerId || clientInfo?.blowerId;
