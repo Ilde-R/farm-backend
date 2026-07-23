@@ -107,4 +107,28 @@ export class SensorsService extends BaseService<
       threshold: c.currentThreshold,
     }));
   }
+
+  async updateDeviceMetadata(blowerConfigId: string, data: {
+    firmwareVersion?: string;
+    wifiRssi?: number;
+    uptimeMs?: number;
+    freeHeap?: number;
+  }) {
+    return this.sensorsRepository.updateDeviceMetadata(blowerConfigId, data);
+  }
+
+  async updateDeviceConfig(blowerConfigId: string, data: {
+    readIntervalMs?: number;
+    scaleFactor?: number;
+  }) {
+    return this.sensorsRepository.updateDeviceConfig(blowerConfigId, data);
+  }
+
+  async getBlowerConfigByTenantAndId(tenantId: string, blowerId: string) {
+    return this.sensorsRepository.getBlowerConfig(tenantId, blowerId);
+  }
+
+  async getBlowerConfigById(blowerConfigId: string) {
+    return this.sensorsRepository.getBlowerConfigById(blowerConfigId);
+  }
 }

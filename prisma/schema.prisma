@@ -77,6 +77,13 @@ model BlowerConfig {
   name String? 
   currentThreshold Float @default(2.0)
 
+  firmwareVersion String?
+  wifiRssi        Int?
+  uptimeMs        Int?
+  freeHeap        Int?
+  readIntervalMs  Int?    @default(1000)
+  scaleFactor     Float?  @default(25000.0)
+
   pressureReadings PressureReading[]
   deviceKeys DeviceKey[]
   

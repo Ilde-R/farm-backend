@@ -63,6 +63,34 @@ export class SensorsRepository extends BaseRepository<
     return this.prisma.blowerConfig.findMany({ where: { tenantId } });
   }
 
+  async updateDeviceMetadata(blowerConfigId: string, data: {
+    firmwareVersion?: string;
+    wifiRssi?: number;
+    uptimeMs?: number;
+    freeHeap?: number;
+  }) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data,
+    });
+  }
+
+  async updateDeviceConfig(blowerConfigId: string, data: {
+    readIntervalMs?: number;
+    scaleFactor?: number;
+  }) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data,
+    });
+  }
+
+  async getBlowerConfigById(blowerConfigId: string) {
+    return this.prisma.blowerConfig.findUnique({
+      where: { id: blowerConfigId },
+    });
+  }
+
   async createReading(data: any) {
     return this.prisma.pressureReading.create({ data });
   }

@@ -64,6 +64,7 @@ export class SensorsGateway
   server!: Server;
 
   private connectedClients = new Map<WebSocket, EnrichedClient>();
+  private heartbeatTimers = new Map<WebSocket, ReturnType<typeof setTimeout>>();
 
   private ensureClientInfo(client: WebSocket): EnrichedClient | undefined {
     let info = this.connectedClients.get(client);
@@ -114,6 +115,29 @@ export class SensorsGateway
     });
   }
 
+  private startHeartbeat(client: WebSocket) {
+    this.clearHeartbeat(client);
+
+    const timer = setTimeout(() => {
+      this.logger.warn(`Client missed pong, closing connection`);
+      client.terminate();
+    }, 35000);
+
+    this.heartbeatTimers.set(client, timer);
+
+    if (client.readyState === WebSocket.OPEN) {
+      client.ping();
+    }
+  }
+
+  private clearHeartbeat(client: WebSocket) {
+    const timer = this.heartbeatTimers.get(client);
+    if (timer) {
+      clearTimeout(timer);
+      this.heartbeatTimers.delete(client);
+    }
+  }
+
   async handleConnection(client: WebSocket) {
     const req = (client as any).__upgradeReq as IncomingMessage;
     if (req) {
@@ -161,6 +185,13 @@ export class SensorsGateway
       this.connectedClients.set(client, info);
     }
 
+    client.on('pong', () => {
+      this.clearHeartbeat(client);
+      this.startHeartbeat(client);
+    });
+
+    this.startHeartbeat(client);
+
     const device = (client as unknown as { device?: DeviceAuth }).device;
     const user = (client as unknown as { user?: UserAuth }).user;
 
@@ -169,6 +200,22 @@ export class SensorsGateway
         event: 'device_online',
         data: { blowerId: info!.blowerId, blowerConfigId: info!.blowerConfigId },
       });
+
+      try {
+        const config = await this.sensorsService.getBlowerConfigById(info!.blowerConfigId!);
+        if (config && (config.readIntervalMs || config.scaleFactor)) {
+          client.send(JSON.stringify({
+            event: 'device_config_update',
+            data: {
+              blowerId: info!.blowerId,
+              readIntervalMs: config.readIntervalMs,
+              scaleFactor: config.scaleFactor,
+            },
+          }));
+        }
+      } catch (e) {
+        this.logger.warn(`Failed to send device config on connect: ${e}`);
+      }
     }
 
     if (user) {
@@ -180,6 +227,7 @@ export class SensorsGateway
   }
 
   handleDisconnect(client: WebSocket) {
+    this.clearHeartbeat(client);
     const info = this.connectedClients.get(client);
     if (info?.blowerId) {
       this.broadcastToUsers(info.tenantId, {
@@ -269,6 +317,19 @@ export class SensorsGateway
         blowerId: data.blowerId || clientInfo?.blowerId,
       };
 
+      if (!enriched.blowerConfigId && enriched.tenantId && enriched.blowerId) {
+        const config = await this.sensorsService.registerBlower(
+          enriched.tenantId,
+          enriched.blowerId,
+        );
+        enriched.blowerConfigId = config.id;
+        if (clientInfo) {
+          clientInfo.blowerConfigId = config.id;
+          clientInfo.blowerId = enriched.blowerId;
+        }
+        this.logger.log(`Auto-registered blower: ${enriched.blowerId} → ${config.id}`);
+      }
+
       await this.sensorsService.create(enriched);
 
       for (const [c, info] of this.connectedClients) {
@@ -280,6 +341,10 @@ export class SensorsGateway
             }),
           );
         }
+      }
+
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ event: 'reading_ack', data: { ok: true, ts: Date.now() } }));
       }
 
       return { ok: true };
@@ -375,5 +440,111 @@ export class SensorsGateway
         client.send(JSON.stringify({ event: 'current_threshold', data }));
       }
     }
+  }
+
+  @SubscribeMessage('device_info')
+  async handleDeviceInfo(
+    @MessageBody()
+    data: {
+      firmware?: string;
+      rssi?: number;
+      uptime?: number;
+      heap?: number;
+    },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    if (!(await this.isDeviceActive(client))) return;
+
+    const clientInfo = this.ensureClientInfo(client);
+    if (!clientInfo?.blowerConfigId) return;
+
+    try {
+      await this.sensorsService.updateDeviceMetadata(clientInfo.blowerConfigId, {
+        firmwareVersion: data.firmware,
+        wifiRssi: data.rssi,
+        uptimeMs: data.uptime,
+        freeHeap: data.heap,
+      });
+
+      this.logger.log(
+        `Device info updated: ${clientInfo.blowerId} fw=${data.firmware} rssi=${data.rssi}`,
+      );
+
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ event: 'device_info_ack', data: { ok: true } }));
+      }
+    } catch (error) {
+      this.logger.error(
+        `Device info error: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
+  }
+
+  @SubscribeMessage('set_device_config')
+  async handleSetDeviceConfig(
+    @MessageBody()
+    data: {
+      blowerId?: string;
+      readIntervalMs?: number;
+      scaleFactor?: number;
+    },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    if (!(await this.isDeviceActive(client))) return;
+
+    const clientInfo = this.ensureClientInfo(client);
+    const blowerId = data.blowerId || clientInfo?.blowerId;
+    const tenantId = clientInfo?.tenantId;
+
+    if (!blowerId || !tenantId) {
+      return { status: 'error', message: 'blowerId required' };
+    }
+
+    const config = await this.sensorsService.getBlowerConfigByTenantAndId(
+      tenantId,
+      blowerId,
+    );
+    if (!config) {
+      return { status: 'error', message: 'BlowerConfig not found' };
+    }
+
+    const update: { readIntervalMs?: number; scaleFactor?: number } = {};
+    if (data.readIntervalMs !== undefined) {
+      if (data.readIntervalMs < 500 || data.readIntervalMs > 60000) {
+        return { status: 'error', message: 'readIntervalMs must be 500-60000' };
+      }
+      update.readIntervalMs = data.readIntervalMs;
+    }
+    if (data.scaleFactor !== undefined) {
+      if (data.scaleFactor <= 0) {
+        return { status: 'error', message: 'scaleFactor must be > 0' };
+      }
+      update.scaleFactor = data.scaleFactor;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return { status: 'error', message: 'No valid fields to update' };
+    }
+
+    await this.sensorsService.updateDeviceConfig(config.id, update);
+
+    for (const [c, info] of this.connectedClients) {
+      if (
+        c.readyState === WebSocket.OPEN &&
+        info.tenantId === tenantId &&
+        info.blowerId === blowerId
+      ) {
+        c.send(
+          JSON.stringify({
+            event: 'device_config_update',
+            data: { blowerId, ...update },
+          }),
+        );
+      }
+    }
+
+    this.logger.log(`Device config updated: ${blowerId}`, update);
+
+    return { status: 'success', blowerId, ...update };
   }
 }

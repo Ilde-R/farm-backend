@@ -89,7 +89,16 @@ export class IotService {
       },
       include: {
         blowerConfig: {
-          select: { blowerId: true, name: true },
+          select: {
+            blowerId: true,
+            name: true,
+            firmwareVersion: true,
+            wifiRssi: true,
+            uptimeMs: true,
+            freeHeap: true,
+            readIntervalMs: true,
+            scaleFactor: true,
+          },
         },
       },
     });
