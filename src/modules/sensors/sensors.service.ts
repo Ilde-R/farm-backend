@@ -37,10 +37,6 @@ export class SensorsService extends BaseService<
     const currentThreshold = data.currentThreshold ?? 2.0;
     const isAlert = data.psi <= currentThreshold;
 
-    if (isAlert) {
-      this.logger.warn(`ALERT! Blower lost pressure: ${data.psi} PSI`);
-    }
-
     if (data.currentThreshold !== undefined) {
       await this.sensorsRepository.updateBlowerThreshold(
         data.blowerConfigId,
