@@ -531,8 +531,7 @@ export class SensorsGateway
     for (const [c, info] of this.connectedClients) {
       if (
         c.readyState === WebSocket.OPEN &&
-        info.tenantId === tenantId &&
-        info.blowerId === blowerId
+        info.tenantId === tenantId
       ) {
         c.send(
           JSON.stringify({
