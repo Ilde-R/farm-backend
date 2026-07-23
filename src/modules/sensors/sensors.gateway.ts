@@ -149,7 +149,11 @@ export class SensorsGateway
             return;
           }
         }
-      } catch {}
+      } catch (e) {
+        this.logger.warn(`Connection auth error: ${e}`);
+        client.close(4001, 'Connection failed');
+        return;
+      }
     }
 
     const info = getClientInfo(client);
@@ -336,17 +340,26 @@ export class SensorsGateway
       return { status: 'error', message: 'tenantId required' };
     }
 
-    const threshold = await this.sensorsService.getLatestThreshold(
-      tenantId,
-      blowerId,
-    );
-
-    client.send(
-      JSON.stringify({
-        event: 'current_threshold',
-        data: { threshold, blowerId },
-      }),
-    );
+    if (blowerId) {
+      const threshold = await this.sensorsService.getLatestThreshold(
+        tenantId,
+        blowerId,
+      );
+      client.send(
+        JSON.stringify({
+          event: 'current_threshold',
+          data: { threshold, blowerId },
+        }),
+      );
+    } else {
+      const thresholds = await this.sensorsService.getAllThresholds(tenantId);
+      client.send(
+        JSON.stringify({
+          event: 'current_threshold',
+          data: { thresholds },
+        }),
+      );
+    }
   }
 
   @SubscribeMessage('current_threshold')

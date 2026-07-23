@@ -96,4 +96,15 @@ export class SensorsService extends BaseService<
     }
     return this.sensorsRepository.updateBlowerThreshold(config.id, threshold);
   }
+
+  async getAllThresholds(
+    tenantId: string,
+  ): Promise<{ blowerId: string; threshold: number }[]> {
+    const configs =
+      await this.sensorsRepository.getAllBlowerConfigs(tenantId);
+    return configs.map((c) => ({
+      blowerId: c.blowerId,
+      threshold: c.currentThreshold,
+    }));
+  }
 }

@@ -59,6 +59,10 @@ export class SensorsRepository extends BaseRepository<
     });
   }
 
+  async getAllBlowerConfigs(tenantId: string) {
+    return this.prisma.blowerConfig.findMany({ where: { tenantId } });
+  }
+
   async createReading(data: any) {
     return this.prisma.pressureReading.create({ data });
   }
