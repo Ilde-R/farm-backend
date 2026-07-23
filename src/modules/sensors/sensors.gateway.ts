@@ -78,21 +78,17 @@ export class SensorsGateway
   afterInit(server: Server) {
     server.on('connection', (client: WebSocket, request: IncomingMessage) => {
       (client as any).__upgradeReq = request;
-      this.logger.log(`WS captured upgrade request: ${request.url}`);
     });
   }
 
   handleConnection(client: WebSocket) {
     const info = getClientInfo(client);
-    this.logger.log(`WS attempt: ${info ? `OK blowerId=${info.blowerId} tenantId=${info.tenantId}` : 'NO INFO'}`);
     if (info) {
       this.connectedClients.set(client, info);
     }
   }
 
   handleDisconnect(client: WebSocket) {
-    const info = this.connectedClients.get(client);
-    this.logger.log(`WS disconnect: ${info?.blowerId || 'unknown'}`);
     this.connectedClients.delete(client);
   }
 
@@ -110,7 +106,6 @@ export class SensorsGateway
         return { status: 'error', message: 'tenantId and blowerId required' };
       }
 
-      this.logger.log(`Registration requested: blowerId=${blowerId}`);
       const config = await this.sensorsService.registerBlower(
         tenantId,
         blowerId,
@@ -158,11 +153,7 @@ export class SensorsGateway
         blowerId: data.blowerId || clientInfo?.blowerId,
       };
 
-      this.logger.debug(
-        `Pressure reading: blowerId=${enriched.blowerId} psi=${enriched.psi}`,
-      );
-
-      const record = await this.sensorsService.create(enriched);
+      await this.sensorsService.create(enriched);
 
       for (const [c] of this.connectedClients) {
         if (c.readyState === WebSocket.OPEN) {

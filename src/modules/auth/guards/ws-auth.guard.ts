@@ -26,9 +26,8 @@ export class WsAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Record<string, unknown> = context.switchToWs().getClient();
 
-    const req: IncomingMessage = ((client as any).__upgradeReq || client.upgradeReq) as IncomingMessage;
-
-    this.logger.log(`WS Guard: upgradeReq=${!!req}, url=${req?.url || 'none'}`);
+    const req: IncomingMessage = ((client as any).__upgradeReq ||
+      client.upgradeReq) as IncomingMessage;
 
     if (!req) {
       throw new WsException('No upgrade request available');
@@ -47,20 +46,17 @@ export class WsAuthGuard implements CanActivate {
     }
 
     if (deviceKey) {
-      this.logger.log(`WS Guard: validating device key`);
       const device = await this.iotService.validateDeviceKey(deviceKey);
       if (!device) {
-        this.logger.warn(`WS Guard: invalid device key`);
+        this.logger.warn(`Device key inválido`);
         throw new WsException('Device key inválido o inactivo');
       }
 
-      this.logger.log(`WS Guard: device OK blowerId=${device.blowerId}`);
       client.device = device;
       return true;
     }
 
     if (token) {
-      this.logger.log(`WS Guard: validating JWT token`);
       try {
         const payload = await this.jwtService.verifyAsync<{
           sub: string;
@@ -69,7 +65,6 @@ export class WsAuthGuard implements CanActivate {
         }>(token);
 
         client.user = payload;
-        this.logger.log(`WS Guard: JWT OK tenantId=${payload.tenantId}`);
         return true;
       } catch {
         throw new WsException('Token inválido o expirado');
