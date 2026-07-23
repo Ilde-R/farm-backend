@@ -64,6 +64,18 @@ export class AuthService {
     );
     if (!valid) throw new UnauthorizedException('Credentials not valid');
 
+    let tenantId = user.tenantId;
+    if (!tenantId) {
+      const tenant = await this.prisma.tenant.create({
+        data: { name: user.username },
+      });
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { tenantId: tenant.id },
+      });
+      tenantId = tenant.id;
+    }
+
     const refreshToken = randomBytes(64).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -72,13 +84,13 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      tenantId: user.tenantId,
+      tenantId,
     };
     return {
       id: user.id,
       username: user.username,
       email: user.email,
-      tenantId: user.tenantId,
+      tenantId,
       access_token: this.jwtService.sign(payload),
       refresh_token: refreshToken,
     };
@@ -104,6 +116,18 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('User not found');
 
+    let tenantId = user.tenantId;
+    if (!tenantId) {
+      const tenant = await this.prisma.tenant.create({
+        data: { name: user.username },
+      });
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { tenantId: tenant.id },
+      });
+      tenantId = tenant.id;
+    }
+
     const newRefreshToken = randomBytes(64).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await this.authRepository.createSession(
@@ -115,7 +139,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      tenantId: user.tenantId,
+      tenantId,
     };
     return {
       access_token: this.jwtService.sign(payload),

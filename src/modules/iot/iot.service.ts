@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProvisionDto } from './dto/provision.dto';
 import { randomBytes } from 'crypto';
@@ -10,6 +10,10 @@ export class IotService {
   constructor(private readonly prisma: PrismaService) {}
 
   async provision(tenantId: string, dto: ProvisionDto) {
+    if (!tenantId) {
+      throw new BadRequestException('Token JWT no contiene tenantId válido');
+    }
+
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
