@@ -62,6 +62,17 @@ export class SensorsGateway
 
   private connectedClients = new Map<WebSocket, EnrichedClient>();
 
+  private ensureClientInfo(client: WebSocket): EnrichedClient | undefined {
+    let info = this.connectedClients.get(client);
+    if (!info) {
+      info = getClientInfo(client);
+      if (info) {
+        this.connectedClients.set(client, info);
+      }
+    }
+    return info;
+  }
+
   constructor(private readonly sensorsService: SensorsService) {}
 
   afterInit(server: Server) {
@@ -91,7 +102,7 @@ export class SensorsGateway
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      const clientInfo = this.connectedClients.get(client);
+      const clientInfo = this.ensureClientInfo(client);
       const tenantId = data.tenantId || clientInfo?.tenantId;
       const blowerId = data.blowerId || clientInfo?.blowerId;
 
@@ -138,7 +149,7 @@ export class SensorsGateway
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      const clientInfo = this.connectedClients.get(client);
+      const clientInfo = this.ensureClientInfo(client);
 
       const enriched: CreateSensorDto = {
         psi: data.psi ?? 0,
@@ -177,7 +188,7 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string; threshold: number },
     @ConnectedSocket() client: WebSocket,
   ) {
-    const clientInfo = this.connectedClients.get(client);
+    const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;
 
@@ -210,7 +221,7 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string },
     @ConnectedSocket() client: WebSocket,
   ) {
-    const clientInfo = this.connectedClients.get(client);
+    const clientInfo = this.ensureClientInfo(client);
     const tenantId = clientInfo?.tenantId;
     const blowerId = data?.blowerId || clientInfo?.blowerId;
 
