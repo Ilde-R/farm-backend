@@ -2,13 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class ProvisionDto {
-  @ApiProperty({ description: 'Blower identifier within the tenant' })
+  @ApiProperty({ description: 'Identificador del blower dentro del tenant' })
   @IsNotEmpty()
   @IsString()
   blowerId!: string;
 
   @ApiProperty({
-    description: 'Human-readable name for the blower',
+    description: 'Nombre descriptivo del blower',
     required: false,
   })
   @IsOptional()

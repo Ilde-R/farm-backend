@@ -12,20 +12,20 @@ export class IotController {
 
   @Post('provision')
   @ApiOperation({
-    summary: 'Provision a new IoT device and generate a device key',
+    summary: 'Provisionar un nuevo dispositivo IoT y generar una device key',
   })
   async provision(@Body() dto: ProvisionDto, @Req() req: RequestWithUser) {
     return this.iotService.provision(req.user.tenantId, dto);
   }
 
   @Get('devices')
-  @ApiOperation({ summary: 'List all device keys for a tenant' })
+  @ApiOperation({ summary: 'Listar todas las device keys de un tenant' })
   async listDevices(@Req() req: RequestWithUser) {
     return this.iotService.listDeviceKeys(req.user.tenantId);
   }
 
   @Patch('devices/:key/revoke')
-  @ApiOperation({ summary: 'Revoke a device key' })
+  @ApiOperation({ summary: 'Revocar una device key' })
   async revokeDevice(@Param('key') key: string) {
     return this.iotService.revokeDeviceKey(key);
   }
