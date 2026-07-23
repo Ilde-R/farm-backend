@@ -1,9 +1,10 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { SensorsModule } from './modules/sensors/sensors.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { IotModule } from './modules/iot/iot.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
@@ -25,6 +26,7 @@ import { AuthGuard } from './modules/auth/guards/auth.guard';
     SensorsModule,
     AuthModule,
     UsersModule,
+    IotModule,
   ],
   controllers: [],
   providers: [

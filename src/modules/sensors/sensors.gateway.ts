@@ -4,22 +4,79 @@ import {
   MessageBody,
   WebSocketServer,
   ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import { UseGuards, Logger } from '@nestjs/common';
 import { SensorsService } from './sensors.service';
+import { CreateSensorDto } from './dto/create-sensor.dto';
 import { Server } from 'ws';
 import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 
+interface EnrichedClient {
+  tenantId: string;
+  blowerId?: string;
+  blowerConfigId?: string;
+}
+
+interface DeviceAuth {
+  tenantId: string;
+  blowerId: string;
+  blowerConfigId: string;
+  currentThreshold: number;
+}
+
+interface UserAuth {
+  tenantId: string;
+  sub: string;
+}
+
+function getClientInfo(client: WebSocket): EnrichedClient | undefined {
+  const device = (client as unknown as { device?: DeviceAuth }).device;
+  if (device) {
+    return {
+      tenantId: device.tenantId,
+      blowerId: device.blowerId,
+      blowerConfigId: device.blowerConfigId,
+    };
+  }
+  const user = (client as unknown as { user?: UserAuth }).user;
+  if (user) {
+    return { tenantId: user.tenantId };
+  }
+  return undefined;
+}
+
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
-export class SensorsGateway {
+export class SensorsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   private readonly logger = new Logger(SensorsGateway.name);
 
   @WebSocketServer()
   server!: Server;
+
+  private connectedClients = new Map<WebSocket, EnrichedClient>();
+
   constructor(private readonly sensorsService: SensorsService) {}
+
+  handleConnection(client: WebSocket) {
+    const info = getClientInfo(client);
+    if (info) {
+      this.connectedClients.set(client, info);
+      this.logger.log(`Client connected: ${info.blowerId || info.tenantId}`);
+    }
+  }
+
+  handleDisconnect(client: WebSocket) {
+    const info = this.connectedClients.get(client);
+    if (info) {
+      this.logger.log(`Client disconnected: ${info.blowerId || info.tenantId}`);
+    }
+    this.connectedClients.delete(client);
+  }
 
   @SubscribeMessage('register_blower')
   async handleRegisterBlower(
@@ -27,11 +84,24 @@ export class SensorsGateway {
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      this.logger.log(`Registro de soplador solicitado: ${data.blowerId}`);
+      const clientInfo = this.connectedClients.get(client);
+      const tenantId = data.tenantId || clientInfo?.tenantId;
+      const blowerId = data.blowerId || clientInfo?.blowerId;
+
+      if (!tenantId || !blowerId) {
+        return { status: 'error', message: 'tenantId and blowerId required' };
+      }
+
+      this.logger.log(`Registration requested: blowerId=${blowerId}`);
       const config = await this.sensorsService.registerBlower(
-        data.tenantId,
-        data.blowerId,
+        tenantId,
+        blowerId,
       );
+
+      if (clientInfo) {
+        clientInfo.blowerConfigId = config.id;
+        clientInfo.blowerId = blowerId;
+      }
 
       client.send(
         JSON.stringify({
@@ -44,78 +114,124 @@ export class SensorsGateway {
       );
     } catch (error) {
       this.logger.error(
-        `Error al registrar soplador: ${error instanceof Error ? error.message : 'Unknown'}`,
+        `Registration error: ${error instanceof Error ? error.message : 'Unknown'}`,
       );
     }
   }
 
   @SubscribeMessage('pressure_reading')
-  async create(@MessageBody() data: any) {
+  async handlePressureReading(
+    @MessageBody()
+    data: {
+      psi?: number;
+      blowerId?: string;
+      blowerConfigId?: string;
+      tenantId?: string;
+    },
+    @ConnectedSocket() client: WebSocket,
+  ) {
     try {
-      this.logger.log(`Lectura de presión recibida: ${data?.blowerId}`);
-      const record = await this.sensorsService.create(data);
+      const clientInfo = this.connectedClients.get(client);
 
-      if (this.server && this.server.clients) {
-        for (const client of this.server.clients) {
-          if (client.readyState === 1) {
-            client.send(
-              JSON.stringify({
-                event: 'pressure_reading',
-                data: data,
-              }),
-            );
-          }
+      const enriched: CreateSensorDto = {
+        psi: data.psi ?? 0,
+        blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
+        tenantId: data.tenantId || clientInfo?.tenantId,
+        blowerId: data.blowerId || clientInfo?.blowerId,
+      };
+
+      this.logger.debug(
+        `Pressure reading: blowerId=${enriched.blowerId} psi=${enriched.psi}`,
+      );
+
+      const record = await this.sensorsService.create(enriched);
+
+      for (const [c] of this.connectedClients) {
+        if (c.readyState === WebSocket.OPEN) {
+          c.send(
+            JSON.stringify({
+              event: 'pressure_reading',
+              data: enriched,
+            }),
+          );
         }
       }
+
       return record;
     } catch (error) {
       this.logger.error(
-        `Error al guardar lectura de presión: ${error instanceof Error ? error.message : 'Unknown'}`,
+        `Pressure reading error: ${error instanceof Error ? error.message : 'Unknown'}`,
       );
     }
   }
 
   @SubscribeMessage('set_new_threshold')
-  handleSetNewThreshold(@MessageBody() data: { threshold: number }) {
-    const message = JSON.stringify({
-      event: 'update_threshold',
-      data: {
-        threshold: data.threshold,
-      },
-    });
-    this.server.clients.forEach((client: any) => {
-      if (client.readyState === 1) {
-        client.send(message);
-      }
-    });
+  async handleSetNewThreshold(
+    @MessageBody() data: { blowerId?: string; threshold: number },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    const clientInfo = this.connectedClients.get(client);
+    const blowerId = data.blowerId || clientInfo?.blowerId;
+    const tenantId = clientInfo?.tenantId;
 
-    return { status: 'success', threshold: data.threshold };
-  }
+    if (!blowerId || !tenantId) {
+      return { status: 'error', message: 'blowerId required' };
+    }
 
-  @SubscribeMessage('get_threshold')
-  async handleGetThreshold(@MessageBody() data: any) {
-    const threshold = await this.sensorsService.getLatestThreshold(
-      data?.blowerId,
+    await this.sensorsService.updateThreshold(
+      tenantId,
+      blowerId,
+      data.threshold,
     );
 
-    this.server.clients.forEach((client: any) => {
-      if (client.readyState === 1) {
-        client.send(
+    for (const [c, info] of this.connectedClients) {
+      if (c.readyState === WebSocket.OPEN && info.blowerId === blowerId) {
+        c.send(
           JSON.stringify({
-            event: 'current_threshold',
-            data: { threshold },
+            event: 'update_threshold',
+            data: { threshold: data.threshold, blowerId },
           }),
         );
       }
-    });
+    }
+
+    return { status: 'success', threshold: data.threshold, blowerId };
+  }
+
+  @SubscribeMessage('get_threshold')
+  async handleGetThreshold(
+    @MessageBody() data: { blowerId?: string },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    const clientInfo = this.connectedClients.get(client);
+    const tenantId = clientInfo?.tenantId;
+    const blowerId = data?.blowerId || clientInfo?.blowerId;
+
+    if (!tenantId) {
+      return { status: 'error', message: 'tenantId required' };
+    }
+
+    const threshold = await this.sensorsService.getLatestThreshold(
+      tenantId,
+      blowerId,
+    );
+
+    client.send(
+      JSON.stringify({
+        event: 'current_threshold',
+        data: { threshold, blowerId },
+      }),
+    );
   }
 
   @SubscribeMessage('current_threshold')
-  handleCurrentThreshold(@MessageBody() data: any) {
-    this.server.clients.forEach((client: any) => {
-      if (client.readyState === 1) {
+  handleCurrentThreshold(
+    @MessageBody() data: { threshold: number; blowerId?: string },
+  ) {
+    for (const [client] of this.connectedClients) {
+      if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ event: 'current_threshold', data }));
       }
-    });
+    }
   }
 }

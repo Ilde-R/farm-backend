@@ -78,9 +78,24 @@ model BlowerConfig {
   currentThreshold Float @default(2.0)
 
   pressureReadings PressureReading[]
+  deviceKeys DeviceKey[]
   
   @@unique([tenantId, blowerId])
   @@map("blower_config")
+}
+
+model DeviceKey {
+  id String  @id @default(uuid()) @db.Uuid
+  key String  @unique
+  isActive Boolean @default(true)
+  
+  blowerConfig BlowerConfig @relation(fields: [blowerConfigId], references: [id], onDelete: Cascade)
+  blowerConfigId String  @db.Uuid
+  
+  createdAt DateTime @default(now())
+
+  @@index([key])
+  @@map("device_key")
 }
 
 model PressureReading {

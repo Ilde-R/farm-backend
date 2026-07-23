@@ -65,7 +65,18 @@ let AuthService = class AuthService {
         const salt = await bcrypt.genSalt();
         const { password, ...userData } = registerDto;
         const hash = await bcrypt.hash(password, salt);
-        return this.authRepository.register(userData, hash);
+        const user = await this.authRepository.register(userData, hash);
+        const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        await this.authRepository.createSession(user.id, refreshToken, expiresAt);
+        const payload = { sub: user.id, email: user.email };
+        return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            access_token: this.jwtService.sign(payload),
+            refresh_token: refreshToken,
+        };
     }
     async login(loginDto) {
         const user = await this.authRepository.findForLogin(loginDto.email);

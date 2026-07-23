@@ -8,33 +8,35 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var SensorsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SensorsService = void 0;
 const common_1 = require("@nestjs/common");
 const base_service_1 = require("../../common/abstracts/base.service");
 const sensors_repository_1 = require("./repositories/sensors.repository");
-let SensorsService = class SensorsService extends base_service_1.BaseService {
+let SensorsService = SensorsService_1 = class SensorsService extends base_service_1.BaseService {
     sensorsRepository;
+    logger = new common_1.Logger(SensorsService_1.name);
     constructor(sensorsRepository) {
         super(sensorsRepository);
         this.sensorsRepository = sensorsRepository;
     }
     async registerBlower(tenantId, blowerId) {
         const config = await this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
-        console.log(`Soplador registrado: ${blowerId} -> configId: ${config.id}`);
+        this.logger.log(`Blower registered: ${blowerId} → configId: ${config.id}`);
         return config;
     }
     lastSaveTime = new Map();
     lastAlertState = new Map();
     async create(data) {
         if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
-            console.error('Faltan datos requeridos. Datos recibidos:', data);
+            this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
             return null;
         }
         const currentThreshold = data.currentThreshold ?? 2.0;
         const isAlert = data.psi <= currentThreshold;
         if (isAlert) {
-            console.log(`¡ALERTA! Soplador perdió presión: ${data.psi} PSI`);
+            this.logger.warn(`ALERT! Blower lost pressure: ${data.psi} PSI`);
         }
         if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
@@ -66,9 +68,17 @@ let SensorsService = class SensorsService extends base_service_1.BaseService {
             return config?.currentThreshold ?? 2.0;
         }
     }
+    async updateThreshold(tenantId, blowerId, threshold) {
+        const config = await this.sensorsRepository.getBlowerConfig(tenantId, blowerId);
+        if (!config) {
+            this.logger.warn(`BlowerConfig not found: tenantId=${tenantId} blowerId=${blowerId}`);
+            return null;
+        }
+        return this.sensorsRepository.updateBlowerThreshold(config.id, threshold);
+    }
 };
 exports.SensorsService = SensorsService;
-exports.SensorsService = SensorsService = __decorate([
+exports.SensorsService = SensorsService = SensorsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [sensors_repository_1.SensorsRepository])
 ], SensorsService);

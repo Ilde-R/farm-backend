@@ -4,6 +4,7 @@ import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
 export declare class SensorsService extends BaseService<any, CreateSensorDto, UpdateSensorDto> {
     private readonly sensorsRepository;
+    private readonly logger;
     constructor(sensorsRepository: SensorsRepository);
     registerBlower(tenantId: string, blowerId: string): Promise<{
         id: string;
@@ -23,4 +24,11 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, Up
         isAlert: boolean;
     } | null>;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
+    updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+    } | null>;
 }

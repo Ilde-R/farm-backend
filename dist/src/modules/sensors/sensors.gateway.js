@@ -19,22 +19,61 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SensorsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const common_1 = require("@nestjs/common");
-const common_2 = require("@nestjs/common");
 const sensors_service_1 = require("./sensors.service");
 const ws_1 = require("ws");
 const ws_2 = __importDefault(require("ws"));
 const ws_auth_guard_1 = require("../auth/guards/ws-auth.guard");
+function getClientInfo(client) {
+    const device = client.device;
+    if (device) {
+        return {
+            tenantId: device.tenantId,
+            blowerId: device.blowerId,
+            blowerConfigId: device.blowerConfigId,
+        };
+    }
+    const user = client.user;
+    if (user) {
+        return { tenantId: user.tenantId };
+    }
+    return undefined;
+}
 let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     sensorsService;
-    logger = new common_2.Logger(SensorsGateway_1.name);
+    logger = new common_1.Logger(SensorsGateway_1.name);
     server;
+    connectedClients = new Map();
     constructor(sensorsService) {
         this.sensorsService = sensorsService;
     }
+    handleConnection(client) {
+        const info = getClientInfo(client);
+        if (info) {
+            this.connectedClients.set(client, info);
+            this.logger.log(`Client connected: ${info.blowerId || info.tenantId}`);
+        }
+    }
+    handleDisconnect(client) {
+        const info = this.connectedClients.get(client);
+        if (info) {
+            this.logger.log(`Client disconnected: ${info.blowerId || info.tenantId}`);
+        }
+        this.connectedClients.delete(client);
+    }
     async handleRegisterBlower(data, client) {
         try {
-            this.logger.log(`Registro de soplador solicitado: ${data.blowerId}`);
-            const config = await this.sensorsService.registerBlower(data.tenantId, data.blowerId);
+            const clientInfo = this.connectedClients.get(client);
+            const tenantId = data.tenantId || clientInfo?.tenantId;
+            const blowerId = data.blowerId || clientInfo?.blowerId;
+            if (!tenantId || !blowerId) {
+                return { status: 'error', message: 'tenantId and blowerId required' };
+            }
+            this.logger.log(`Registration requested: blowerId=${blowerId}`);
+            const config = await this.sensorsService.registerBlower(tenantId, blowerId);
+            if (clientInfo) {
+                clientInfo.blowerConfigId = config.id;
+                clientInfo.blowerId = blowerId;
+            }
             client.send(JSON.stringify({
                 event: 'blower_registered',
                 data: {
@@ -44,60 +83,71 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             }));
         }
         catch (error) {
-            this.logger.error(`Error al registrar soplador: ${error instanceof Error ? error.message : 'Unknown'}`);
+            this.logger.error(`Registration error: ${error instanceof Error ? error.message : 'Unknown'}`);
         }
     }
-    async create(data) {
+    async handlePressureReading(data, client) {
         try {
-            this.logger.log(`Lectura de presión recibida: ${data?.blowerId}`);
-            const record = await this.sensorsService.create(data);
-            if (this.server && this.server.clients) {
-                for (const client of this.server.clients) {
-                    if (client.readyState === 1) {
-                        client.send(JSON.stringify({
-                            event: 'pressure_reading',
-                            data: data,
-                        }));
-                    }
+            const clientInfo = this.connectedClients.get(client);
+            const enriched = {
+                psi: data.psi ?? 0,
+                blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
+                tenantId: data.tenantId || clientInfo?.tenantId,
+                blowerId: data.blowerId || clientInfo?.blowerId,
+            };
+            this.logger.debug(`Pressure reading: blowerId=${enriched.blowerId} psi=${enriched.psi}`);
+            const record = await this.sensorsService.create(enriched);
+            for (const [c] of this.connectedClients) {
+                if (c.readyState === ws_2.default.OPEN) {
+                    c.send(JSON.stringify({
+                        event: 'pressure_reading',
+                        data: enriched,
+                    }));
                 }
             }
             return record;
         }
         catch (error) {
-            this.logger.error(`Error al guardar lectura de presión: ${error instanceof Error ? error.message : 'Unknown'}`);
+            this.logger.error(`Pressure reading error: ${error instanceof Error ? error.message : 'Unknown'}`);
         }
     }
-    handleSetNewThreshold(data) {
-        const message = JSON.stringify({
-            event: 'update_threshold',
-            data: {
-                threshold: data.threshold,
-            },
-        });
-        this.server.clients.forEach((client) => {
-            if (client.readyState === 1) {
-                client.send(message);
-            }
-        });
-        return { status: 'success', threshold: data.threshold };
-    }
-    async handleGetThreshold(data) {
-        const threshold = await this.sensorsService.getLatestThreshold(data?.blowerId);
-        this.server.clients.forEach((client) => {
-            if (client.readyState === 1) {
-                client.send(JSON.stringify({
-                    event: 'current_threshold',
-                    data: { threshold },
+    async handleSetNewThreshold(data, client) {
+        const clientInfo = this.connectedClients.get(client);
+        const blowerId = data.blowerId || clientInfo?.blowerId;
+        const tenantId = clientInfo?.tenantId;
+        if (!blowerId || !tenantId) {
+            return { status: 'error', message: 'blowerId required' };
+        }
+        await this.sensorsService.updateThreshold(tenantId, blowerId, data.threshold);
+        for (const [c, info] of this.connectedClients) {
+            if (c.readyState === ws_2.default.OPEN && info.blowerId === blowerId) {
+                c.send(JSON.stringify({
+                    event: 'update_threshold',
+                    data: { threshold: data.threshold, blowerId },
                 }));
             }
-        });
+        }
+        return { status: 'success', threshold: data.threshold, blowerId };
+    }
+    async handleGetThreshold(data, client) {
+        const clientInfo = this.connectedClients.get(client);
+        const tenantId = clientInfo?.tenantId;
+        const blowerId = data?.blowerId || clientInfo?.blowerId;
+        if (!tenantId) {
+            return { status: 'error', message: 'tenantId required' };
+        }
+        const threshold = await this.sensorsService.getLatestThreshold(tenantId, blowerId);
+        client.send(JSON.stringify({
+            event: 'current_threshold',
+            data: { threshold, blowerId },
+        }));
     }
     handleCurrentThreshold(data) {
-        this.server.clients.forEach((client) => {
-            if (client.readyState === 1) {
+        for (const [client] of this.connectedClients) {
+            if (client.readyState === ws_2.default.OPEN) {
                 client.send(JSON.stringify({ event: 'current_threshold', data }));
             }
-        });
+        }
     }
 };
 exports.SensorsGateway = SensorsGateway;
@@ -116,22 +166,25 @@ __decorate([
 __decorate([
     (0, websockets_1.SubscribeMessage)('pressure_reading'),
     __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, ws_2.default]),
     __metadata("design:returntype", Promise)
-], SensorsGateway.prototype, "create", null);
+], SensorsGateway.prototype, "handlePressureReading", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('set_new_threshold'),
     __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object, ws_2.default]),
+    __metadata("design:returntype", Promise)
 ], SensorsGateway.prototype, "handleSetNewThreshold", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('get_threshold'),
     __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, ws_2.default]),
     __metadata("design:returntype", Promise)
 ], SensorsGateway.prototype, "handleGetThreshold", null);
 __decorate([

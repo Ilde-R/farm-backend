@@ -10,9 +10,8 @@ export declare class AuthController {
         id: string;
         username: string;
         email: string;
-        createdAt: Date;
-        updatedAt: Date;
-        tenantId: string | null;
+        access_token: string;
+        refresh_token: string;
     }>;
     login(loginDto: LoginDto): Promise<{
         id: string;

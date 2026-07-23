@@ -50,7 +50,7 @@ async function bootstrap() {
         spec: { content: document },
     }));
     app.useWebSocketAdapter(new platform_ws_1.WsAdapter(app));
-    await app.listen(config_1.envs.port);
+    await app.listen(config_1.envs.port, '0.0.0.0');
     logger.log(`Backend running on port ${config_1.envs.port}`);
 }
 bootstrap();

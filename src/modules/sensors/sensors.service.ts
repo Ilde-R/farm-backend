@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
@@ -10,6 +10,8 @@ export class SensorsService extends BaseService<
   CreateSensorDto,
   UpdateSensorDto
 > {
+  private readonly logger = new Logger(SensorsService.name);
+
   constructor(private readonly sensorsRepository: SensorsRepository) {
     super(sensorsRepository);
   }
@@ -19,7 +21,7 @@ export class SensorsService extends BaseService<
       tenantId,
       blowerId,
     );
-    console.log(`Soplador registrado: ${blowerId} -> configId: ${config.id}`);
+    this.logger.log(`Blower registered: ${blowerId} → configId: ${config.id}`);
     return config;
   }
 
@@ -28,7 +30,7 @@ export class SensorsService extends BaseService<
 
   async create(data: CreateSensorDto) {
     if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
-      console.error('Faltan datos requeridos. Datos recibidos:', data);
+      this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
       return null;
     }
 
@@ -36,7 +38,7 @@ export class SensorsService extends BaseService<
     const isAlert = data.psi <= currentThreshold;
 
     if (isAlert) {
-      console.log(`¡ALERTA! Soplador perdió presión: ${data.psi} PSI`);
+      this.logger.warn(`ALERT! Blower lost pressure: ${data.psi} PSI`);
     }
 
     if (data.currentThreshold !== undefined) {
@@ -83,5 +85,19 @@ export class SensorsService extends BaseService<
         await this.sensorsRepository.getFirstBlowerConfig(tenantId);
       return config?.currentThreshold ?? 2.0;
     }
+  }
+
+  async updateThreshold(tenantId: string, blowerId: string, threshold: number) {
+    const config = await this.sensorsRepository.getBlowerConfig(
+      tenantId,
+      blowerId,
+    );
+    if (!config) {
+      this.logger.warn(
+        `BlowerConfig not found: tenantId=${tenantId} blowerId=${blowerId}`,
+      );
+      return null;
+    }
+    return this.sensorsRepository.updateBlowerThreshold(config.id, threshold);
   }
 }
