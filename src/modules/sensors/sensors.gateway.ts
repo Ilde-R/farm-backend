@@ -6,6 +6,7 @@ import {
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { UseGuards, Logger } from '@nestjs/common';
 import { SensorsService } from './sensors.service';
@@ -13,6 +14,7 @@ import { CreateSensorDto } from './dto/create-sensor.dto';
 import { Server } from 'ws';
 import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
+import { IncomingMessage } from 'http';
 
 interface EnrichedClient {
   tenantId: string;
@@ -51,7 +53,7 @@ function getClientInfo(client: WebSocket): EnrichedClient | undefined {
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
 export class SensorsGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(SensorsGateway.name);
 
@@ -61,6 +63,13 @@ export class SensorsGateway
   private connectedClients = new Map<WebSocket, EnrichedClient>();
 
   constructor(private readonly sensorsService: SensorsService) {}
+
+  afterInit(server: Server) {
+    server.on('connection', (client: WebSocket, request: IncomingMessage) => {
+      (client as any).__upgradeReq = request;
+      this.logger.log(`WS captured upgrade request: ${request.url}`);
+    });
+  }
 
   handleConnection(client: WebSocket) {
     const info = getClientInfo(client);

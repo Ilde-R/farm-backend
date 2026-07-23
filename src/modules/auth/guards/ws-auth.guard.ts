@@ -26,7 +26,7 @@ export class WsAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Record<string, unknown> = context.switchToWs().getClient();
 
-    const req: IncomingMessage = client.upgradeReq as IncomingMessage;
+    const req: IncomingMessage = ((client as any).__upgradeReq || client.upgradeReq) as IncomingMessage;
 
     this.logger.log(`WS Guard: upgradeReq=${!!req}, url=${req?.url || 'none'}`);
 
