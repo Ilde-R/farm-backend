@@ -104,14 +104,24 @@ export class SensorsGateway
           const device = await this.iotService.validateDeviceKey(deviceKey);
           if (device) {
             (client as any).device = { ...device, deviceKey };
+          } else {
+            this.logger.warn(`Device key inválido en conexión, cerrando`);
+            client.close(4001, 'Device key revoked');
+            return;
           }
         } else if (token) {
-          const payload = await this.jwtService.verifyAsync<{
-            sub: string;
-            email: string;
-            tenantId: string;
-          }>(token);
-          (client as any).user = payload;
+          try {
+            const payload = await this.jwtService.verifyAsync<{
+              sub: string;
+              email: string;
+              tenantId: string;
+            }>(token);
+            (client as any).user = payload;
+          } catch {
+            this.logger.warn(`Token inválido en conexión, cerrando`);
+            client.close(4001, 'Invalid token');
+            return;
+          }
         }
       } catch {}
     }
