@@ -82,6 +82,32 @@ export class SensorsGateway
     private readonly jwtService: JwtService,
   ) {}
 
+  private broadcastToUsers(tenantId: string, message: { event: string; data: any }, exclude?: WebSocket) {
+    for (const [c, info] of this.connectedClients) {
+      const userData = (c as unknown as { user?: UserAuth }).user;
+      if (
+        c !== exclude &&
+        c.readyState === WebSocket.OPEN &&
+        userData &&
+        userData.tenantId === tenantId
+      ) {
+        c.send(JSON.stringify(message));
+      }
+    }
+  }
+
+  private getOnlineDevices(tenantId: string) {
+    const seen = new Set<string>();
+    const devices: { blowerId: string; blowerConfigId: string }[] = [];
+    for (const [, info] of this.connectedClients) {
+      if (info.blowerId && info.tenantId === tenantId && !seen.has(info.blowerId)) {
+        seen.add(info.blowerId);
+        devices.push({ blowerId: info.blowerId, blowerConfigId: info.blowerConfigId! });
+      }
+    }
+    return devices;
+  }
+
   afterInit(server: Server) {
     server.on('connection', (client: WebSocket, request: IncomingMessage) => {
       (client as any).__upgradeReq = request;
@@ -130,9 +156,33 @@ export class SensorsGateway
     if (info) {
       this.connectedClients.set(client, info);
     }
+
+    const device = (client as unknown as { device?: DeviceAuth }).device;
+    const user = (client as unknown as { user?: UserAuth }).user;
+
+    if (device) {
+      this.broadcastToUsers(info!.tenantId, {
+        event: 'device_online',
+        data: { blowerId: info!.blowerId, blowerConfigId: info!.blowerConfigId },
+      });
+    }
+
+    if (user) {
+      const onlineDevices = this.getOnlineDevices(user.tenantId);
+      if (onlineDevices.length > 0) {
+        client.send(JSON.stringify({ event: 'devices_online', data: { devices: onlineDevices } }));
+      }
+    }
   }
 
   handleDisconnect(client: WebSocket) {
+    const info = this.connectedClients.get(client);
+    if (info?.blowerId) {
+      this.broadcastToUsers(info.tenantId, {
+        event: 'device_offline',
+        data: { blowerId: info.blowerId },
+      }, client);
+    }
     this.connectedClients.delete(client);
   }
 

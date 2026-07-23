@@ -4,7 +4,7 @@ import { IotService } from './iot.service';
 import { ProvisionDto } from './dto/provision.dto';
 import type { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 
-@ApiTags('iot')
+@ApiTags('Iot')
 @ApiBearerAuth()
 @Controller('iot')
 export class IotController {
