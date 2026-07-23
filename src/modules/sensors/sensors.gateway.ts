@@ -175,7 +175,7 @@ export class SensorsGateway
         }
       }
 
-      return record;
+      return { ok: true };
     } catch (error) {
       this.logger.error(
         `Pressure reading error: ${error instanceof Error ? error.message : 'Unknown'}`,
