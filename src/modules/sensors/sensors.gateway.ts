@@ -155,8 +155,8 @@ export class SensorsGateway
 
       await this.sensorsService.create(enriched);
 
-      for (const [c] of this.connectedClients) {
-        if (c.readyState === WebSocket.OPEN) {
+      for (const [c, info] of this.connectedClients) {
+        if (c.readyState === WebSocket.OPEN && info.tenantId === enriched.tenantId) {
           c.send(
             JSON.stringify({
               event: 'pressure_reading',
@@ -194,7 +194,7 @@ export class SensorsGateway
     );
 
     for (const [c, info] of this.connectedClients) {
-      if (c.readyState === WebSocket.OPEN && info.blowerId === blowerId) {
+      if (c.readyState === WebSocket.OPEN && info.tenantId === tenantId && info.blowerId === blowerId) {
         c.send(
           JSON.stringify({
             event: 'update_threshold',
@@ -236,9 +236,13 @@ export class SensorsGateway
   @SubscribeMessage('current_threshold')
   handleCurrentThreshold(
     @MessageBody() data: { threshold: number; blowerId?: string },
+    @ConnectedSocket() sender: WebSocket,
   ) {
-    for (const [client] of this.connectedClients) {
-      if (client.readyState === WebSocket.OPEN) {
+    const senderInfo = this.ensureClientInfo(sender);
+    if (!senderInfo) return;
+
+    for (const [client, info] of this.connectedClients) {
+      if (client.readyState === WebSocket.OPEN && info.tenantId === senderInfo.tenantId) {
         client.send(JSON.stringify({ event: 'current_threshold', data }));
       }
     }
