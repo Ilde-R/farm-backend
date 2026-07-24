@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../../common/abstracts/base.repository';
 import { CreateSensorDto } from '../dto/create-sensor.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { PressureReading } from '@prisma/client';
 
 @Injectable()
 export class SensorsRepository extends BaseRepository<
-  any,
+  PressureReading,
   CreateSensorDto,
-  any
+  Partial<PressureReading>
 > {
   constructor(private readonly prisma: PrismaService) {
     super(prisma.pressureReading);
@@ -96,7 +97,12 @@ export class SensorsRepository extends BaseRepository<
     });
   }
 
-  async createReading(data: any) {
+  async createReading(data: {
+    tenant: { connect: { id: string } };
+    blowerConfig: { connect: { id: string } };
+    psi: number;
+    isAlert: boolean;
+  }) {
     return this.prisma.pressureReading.create({ data });
   }
 

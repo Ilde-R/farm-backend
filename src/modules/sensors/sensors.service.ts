@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
+import { PressureReading } from '@prisma/client';
 
 @Injectable()
-export class SensorsService extends BaseService<any, CreateSensorDto, any> {
+export class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> {
   private readonly logger = new Logger(SensorsService.name);
 
   constructor(private readonly sensorsRepository: SensorsRepository) {
@@ -15,7 +16,7 @@ export class SensorsService extends BaseService<any, CreateSensorDto, any> {
     return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
   }
 
-  async create(data: CreateSensorDto) {
+  async createReading(data: CreateSensorDto) {
     if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
       this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
       return null;

@@ -340,7 +340,7 @@ export class SensorsGateway
         }
       }
 
-      await this.sensorsService.create(enriched);
+      await this.sensorsService.createReading(enriched);
 
       for (const [c, info] of this.connectedClients) {
         if (c.readyState === WebSocket.OPEN && info.tenantId === enriched.tenantId) {

@@ -264,7 +264,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
                     clientInfo.blowerId = enriched.blowerId;
                 }
             }
-            await this.sensorsService.create(enriched);
+            await this.sensorsService.createReading(enriched);
             for (const [c, info] of this.connectedClients) {
                 if (c.readyState === ws_2.default.OPEN && info.tenantId === enriched.tenantId) {
                     c.send(JSON.stringify({

@@ -24,7 +24,7 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
     async registerBlower(tenantId, blowerId) {
         return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
     }
-    async create(data) {
+    async createReading(data) {
         if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
             this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
             return null;
