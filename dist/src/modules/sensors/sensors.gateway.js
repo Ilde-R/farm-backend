@@ -20,6 +20,9 @@ exports.SensorsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const common_1 = require("@nestjs/common");
 const sensors_service_1 = require("./sensors.service");
+const create_sensor_dto_1 = require("./dto/create-sensor.dto");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const ws_1 = require("ws");
 const ws_2 = __importDefault(require("ws"));
 const ws_auth_guard_1 = require("../auth/guards/ws-auth.guard");
@@ -247,6 +250,12 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
                 tenantId: data.tenantId || clientInfo?.tenantId,
                 blowerId: data.blowerId || clientInfo?.blowerId,
             };
+            const dto = (0, class_transformer_1.plainToInstance)(create_sensor_dto_1.CreateSensorDto, enriched);
+            const errors = await (0, class_validator_1.validate)(dto);
+            if (errors.length > 0) {
+                this.logger.warn(`Invalid pressure_reading data: ${errors.map((e) => Object.values(e.constraints || {}).join(', ')).join('; ')}`);
+                return;
+            }
             if (!enriched.blowerConfigId && enriched.tenantId && enriched.blowerId) {
                 const config = await this.sensorsService.registerBlower(enriched.tenantId, enriched.blowerId);
                 enriched.blowerConfigId = config.id;

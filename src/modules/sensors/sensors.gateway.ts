@@ -11,6 +11,8 @@ import {
 import { UseGuards, Logger } from '@nestjs/common';
 import { SensorsService } from './sensors.service';
 import { CreateSensorDto } from './dto/create-sensor.dto';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { Server } from 'ws';
 import WebSocket from 'ws';
 import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
@@ -316,6 +318,15 @@ export class SensorsGateway
         tenantId: data.tenantId || clientInfo?.tenantId,
         blowerId: data.blowerId || clientInfo?.blowerId,
       };
+
+      const dto = plainToInstance(CreateSensorDto, enriched);
+      const errors = await validate(dto);
+      if (errors.length > 0) {
+        this.logger.warn(
+          `Invalid pressure_reading data: ${errors.map((e) => Object.values(e.constraints || {}).join(', ')).join('; ')}`,
+        );
+        return;
+      }
 
       if (!enriched.blowerConfigId && enriched.tenantId && enriched.blowerId) {
         const config = await this.sensorsService.registerBlower(

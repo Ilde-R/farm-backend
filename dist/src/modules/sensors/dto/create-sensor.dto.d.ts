@@ -1,4 +1,4 @@
-export interface CreateSensorDto {
+export declare class CreateSensorDto {
     psi: number;
     blowerId?: string;
     tenantId?: string;
