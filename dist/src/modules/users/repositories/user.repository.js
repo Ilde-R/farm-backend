@@ -32,6 +32,41 @@ let UserRepository = class UserRepository extends base_repository_1.BaseReposito
             select: user_select_1.userSelect,
         });
     }
+    async findCredentialByUserId(userId) {
+        return this.prisma.credential.findUnique({
+            where: { userId },
+        });
+    }
+    async updateCredentialPassword(userId, hashedPassword) {
+        return this.prisma.credential.update({
+            where: { userId },
+            data: { password: hashedPassword },
+        });
+    }
+    async updateProfile(userId, data) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data,
+            select: user_select_1.userSelect,
+        });
+    }
+    async deleteUserWithTenant(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                tenantId: true,
+            },
+        });
+        if (!user)
+            return null;
+        await this.prisma.user.delete({
+            where: { id: userId },
+        });
+        return {
+            deletedUserId: userId,
+            deletedTenantId: user.tenantId,
+        };
+    }
 };
 exports.UserRepository = UserRepository;
 exports.UserRepository = UserRepository = __decorate([

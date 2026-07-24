@@ -16,6 +16,8 @@ exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
+const update_profile_dto_1 = require("./dto/update-profile.dto");
+const change_password_dto_1 = require("./dto/change-password.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -26,6 +28,15 @@ let UsersController = class UsersController {
     }
     async getProfile(req) {
         return this.usersService.getProfile(req.user.sub);
+    }
+    async updateProfile(req, updateProflileDto) {
+        return this.usersService.updateProfile(req.user.sub, updateProflileDto);
+    }
+    async changePassword(req, changePasswordDto) {
+        return this.usersService.changePassword(req.user.sub, changePasswordDto);
+    }
+    async deleteAccount(req) {
+        return this.usersService.deleteAccount(req.user.sub);
     }
 };
 exports.UsersController = UsersController;
@@ -45,6 +56,32 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Patch)('profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Actualizar perfil' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Patch)('password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Cambiar password' }),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Delete)('profile'),
+    (0, swagger_1.ApiOperation)({ summary: 'Eliminar cuenta propia' }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "deleteAccount", null);
 exports.UsersController = UsersController = __decorate([
     (0, swagger_1.ApiTags)('Usuarios'),
     (0, swagger_1.ApiBearerAuth)(),

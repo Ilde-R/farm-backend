@@ -29,4 +29,48 @@ export class UserRepository extends BaseRepository<
       select: userSelect,
     });
   }
+
+  async findCredentialByUserId(userId: string) {
+    return this.prisma.credential.findUnique({
+      where: { userId },
+    });
+  }
+
+  async updateCredentialPassword(userId: string, hashedPassword: string) {
+    return this.prisma.credential.update({
+      where: { userId },
+      data: { password: hashedPassword },
+    });
+  }
+
+  async updateProfile(
+    userId: string,
+    data: { username?: string; email?: string },
+  ) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: userSelect,
+    });
+  }
+
+  async deleteUserWithTenant(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        tenantId: true,
+      },
+    });
+
+    if (!user) return null;
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      deletedUserId: userId,
+      deletedTenantId: user.tenantId,
+    };
+  }
 }

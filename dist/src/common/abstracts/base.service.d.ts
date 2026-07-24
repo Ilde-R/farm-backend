@@ -1,8 +1,8 @@
 import { BaseRepository } from './base.repository';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 export declare abstract class BaseService<T, CreateDto, UpdateDto> {
-    protected readonly repository: BaseRepository<T, CreateDto, UpdateDto>;
-    constructor(repository: BaseRepository<T, CreateDto, UpdateDto>);
+    protected readonly userRepository: BaseRepository<T, CreateDto, UpdateDto>;
+    constructor(userRepository: BaseRepository<T, CreateDto, UpdateDto>);
     create(createDto: CreateDto): Promise<T>;
     findAll(pagination: PaginationQueryDto): Promise<{
         items: any;
