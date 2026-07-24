@@ -327,7 +327,6 @@ export class SensorsGateway
           clientInfo.blowerConfigId = config.id;
           clientInfo.blowerId = enriched.blowerId;
         }
-        this.logger.log(`Auto-registered blower: ${enriched.blowerId} → ${config.id}`);
       }
 
       await this.sensorsService.create(enriched);
@@ -466,10 +465,6 @@ export class SensorsGateway
         freeHeap: data.heap,
       });
 
-      this.logger.log(
-        `Device info updated: ${clientInfo.blowerId} fw=${data.firmware} rssi=${data.rssi}`,
-      );
-
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ event: 'device_info_ack', data: { ok: true } }));
       }
@@ -541,8 +536,6 @@ export class SensorsGateway
         );
       }
     }
-
-    this.logger.log(`Device config updated: ${blowerId}`, update);
 
     return { status: 'success', blowerId, ...update };
   }

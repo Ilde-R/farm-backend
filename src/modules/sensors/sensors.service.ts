@@ -17,12 +17,10 @@ export class SensorsService extends BaseService<
   }
 
   async registerBlower(tenantId: string, blowerId: string) {
-    const config = await this.sensorsRepository.upsertBlowerConfig(
+    return this.sensorsRepository.upsertBlowerConfig(
       tenantId,
       blowerId,
     );
-    this.logger.log(`Blower registered: ${blowerId} → configId: ${config.id}`);
-    return config;
   }
 
   private lastSaveTime: Map<string, number> = new Map();
