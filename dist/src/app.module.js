@@ -17,6 +17,8 @@ const iot_module_1 = require("./modules/iot/iot.module");
 const core_1 = require("@nestjs/core");
 const throttler_1 = require("@nestjs/throttler");
 const auth_guard_1 = require("./modules/auth/guards/auth.guard");
+const http_exception_filter_1 = require("./common/filters/http-exception.filter");
+const prisma_client_exception_filter_1 = require("./common/filters/prisma-client-exception.filter");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +51,14 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: auth_guard_1.AuthGuard,
+            },
+            {
+                provide: core_1.APP_FILTER,
+                useClass: http_exception_filter_1.HttpExceptionFilter,
+            },
+            {
+                provide: core_1.APP_FILTER,
+                useClass: prisma_client_exception_filter_1.PrismaClientExceptionFilter,
             },
         ],
     })

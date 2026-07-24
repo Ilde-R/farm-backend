@@ -13,8 +13,8 @@ export declare class IotController {
     }>;
     listDevices(req: RequestWithUser): Promise<({
         blowerConfig: {
-            name: string | null;
             blowerId: string;
+            name: string | null;
             firmwareVersion: string | null;
             wifiRssi: number | null;
             uptimeMs: number | null;
@@ -24,16 +24,16 @@ export declare class IotController {
         };
     } & {
         id: string;
+        key: string;
         isActive: boolean;
         createdAt: Date;
         blowerConfigId: string;
-        key: string;
     })[]>;
-    revokeDevice(key: string): Promise<{
+    revokeDevice(key: string, req: RequestWithUser): Promise<{
         id: string;
+        key: string;
         isActive: boolean;
         createdAt: Date;
         blowerConfigId: string;
-        key: string;
     }>;
 }

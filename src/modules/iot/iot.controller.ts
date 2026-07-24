@@ -26,7 +26,7 @@ export class IotController {
 
   @Patch('devices/:key/revoke')
   @ApiOperation({ summary: 'Revocar una device key' })
-  async revokeDevice(@Param('key') key: string) {
-    return this.iotService.revokeDeviceKey(key);
+  async revokeDevice(@Param('key') key: string, @Req() req: RequestWithUser) {
+    return this.iotService.revokeDeviceKey(key, req.user.tenantId);
   }
 }

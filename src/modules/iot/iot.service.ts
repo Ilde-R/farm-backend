@@ -1,57 +1,40 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProvisionDto } from './dto/provision.dto';
 import { randomBytes } from 'crypto';
+import { IotRepository } from './repositories/iot.repository';
 
 @Injectable()
 export class IotService {
-  private readonly logger = new Logger(IotService.name);
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly iotRepository: IotRepository,
+  ) {}
 
   async provision(tenantId: string, dto: ProvisionDto) {
     if (!tenantId) {
       throw new BadRequestException('Token JWT no contiene tenantId válido');
     }
 
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
+    const tenant = await this.iotRepository.findTenantById(tenantId);
     if (!tenant) {
-      throw new NotFoundException(`Tenant ${tenantId} not found`);
+      throw new NotFoundException(`Tenant ${tenantId} no encontrado`);
     }
 
-    const blowerConfig = await this.prisma.blowerConfig.upsert({
-      where: {
-        tenantId_blowerId: {
-          tenantId: tenantId,
-          blowerId: dto.blowerId,
-        },
-      },
-      update: {
-        name: dto.blowerName,
-      },
-      create: {
-        blowerId: dto.blowerId,
-        name: dto.blowerName,
-        tenant: { connect: { id: tenantId } },
-        currentThreshold: 2.0,
-      },
-    });
+    const blowerConfig = await this.iotRepository.upsertBlowerConfig(
+      tenantId,
+      dto.blowerId,
+      dto.blowerName,
+    );
 
     const key = `blwr_${randomBytes(16).toString('hex')}`;
-
-    const deviceKey = await this.prisma.deviceKey.create({
-      data: {
-        key,
-        blowerConfig: { connect: { id: blowerConfig.id } },
-      },
-    });
-
-    this.logger.log(
-      `Device provisioned: key=${key} → blowerConfigId=${blowerConfig.id}`,
-    );
+    const deviceKey = await this.iotRepository.createKey(key, blowerConfig.id);
 
     return {
       deviceKey: deviceKey.key,
@@ -63,12 +46,7 @@ export class IotService {
   }
 
   async validateDeviceKey(key: string) {
-    const deviceKey = await this.prisma.deviceKey.findUnique({
-      where: { key },
-      include: {
-        blowerConfig: true,
-      },
-    });
+    const deviceKey = await this.iotRepository.findByKeyWithBlower(key);
 
     if (!deviceKey || !deviceKey.isActive) {
       return null;
@@ -83,35 +61,22 @@ export class IotService {
   }
 
   async listDeviceKeys(tenantId: string) {
-    return this.prisma.deviceKey.findMany({
-      where: {
-        blowerConfig: { tenantId },
-      },
-      include: {
-        blowerConfig: {
-          select: {
-            blowerId: true,
-            name: true,
-            firmwareVersion: true,
-            wifiRssi: true,
-            uptimeMs: true,
-            freeHeap: true,
-            readIntervalMs: true,
-            scaleFactor: true,
-          },
-        },
-      },
-    });
+    return this.iotRepository.findKeysByTenant(tenantId);
   }
 
-  async revokeDeviceKey(key: string) {
-    const existing = await this.prisma.deviceKey.findUnique({ where: { key } });
+  async revokeDeviceKey(key: string, tenantId: string) {
+    const existing = await this.iotRepository.findKeyWithTenant(key);
+
     if (!existing) {
-      throw new NotFoundException(`Device key not found`);
+      throw new NotFoundException(`La llave del dispositivo no existe`);
     }
-    return this.prisma.deviceKey.update({
-      where: { key },
-      data: { isActive: false },
-    });
+
+    if (existing.blowerConfig.tenantId !== tenantId) {
+      throw new ForbiddenException(
+        `La llave del dispositivo no le pertenece a este tenant`,
+      );
+    }
+
+    return this.iotRepository.updateKeyActive(key, false);
   }
 }

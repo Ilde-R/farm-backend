@@ -5,9 +5,11 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { IotModule } from './modules/iot/iot.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 
 @Module({
   imports: [
@@ -37,6 +39,14 @@ import { AuthGuard } from './modules/auth/guards/auth.guard';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: PrismaClientExceptionFilter,
     },
   ],
 })

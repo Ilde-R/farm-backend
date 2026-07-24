@@ -28,8 +28,8 @@ let IotController = class IotController {
     async listDevices(req) {
         return this.iotService.listDeviceKeys(req.user.tenantId);
     }
-    async revokeDevice(key) {
-        return this.iotService.revokeDeviceKey(key);
+    async revokeDevice(key, req) {
+        return this.iotService.revokeDeviceKey(key, req.user.tenantId);
     }
 };
 exports.IotController = IotController;
@@ -56,8 +56,9 @@ __decorate([
     (0, common_1.Patch)('devices/:key/revoke'),
     (0, swagger_1.ApiOperation)({ summary: 'Revocar una device key' }),
     __param(0, (0, common_1.Param)('key')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], IotController.prototype, "revokeDevice", null);
 exports.IotController = IotController = __decorate([

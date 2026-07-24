@@ -10,13 +10,14 @@ exports.IotModule = void 0;
 const common_1 = require("@nestjs/common");
 const iot_service_1 = require("./iot.service");
 const iot_controller_1 = require("./iot.controller");
+const iot_repository_1 = require("./repositories/iot.repository");
 let IotModule = class IotModule {
 };
 exports.IotModule = IotModule;
 exports.IotModule = IotModule = __decorate([
     (0, common_1.Module)({
         controllers: [iot_controller_1.IotController],
-        providers: [iot_service_1.IotService],
+        providers: [iot_service_1.IotService, iot_repository_1.IotRepository],
         exports: [iot_service_1.IotService],
     })
 ], IotModule);
