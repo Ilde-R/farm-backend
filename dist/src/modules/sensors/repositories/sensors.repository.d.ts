@@ -6,8 +6,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
     private readonly prisma;
     constructor(prisma: PrismaService);
     upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -21,8 +21,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastAlertState: boolean;
     }>;
     updateBlowerThreshold(blowerConfigId: string, threshold: number): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -36,8 +36,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastAlertState: boolean;
     }>;
     getBlowerConfig(tenantId: string, blowerId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -51,8 +51,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastAlertState: boolean;
     } | null>;
     getFirstBlowerConfig(tenantId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -66,8 +66,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastAlertState: boolean;
     } | null>;
     getAllBlowerConfigs(tenantId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -86,8 +86,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         uptimeMs?: number;
         freeHeap?: number;
     }): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -104,8 +104,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -119,8 +119,8 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastAlertState: boolean;
     }>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -148,19 +148,19 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         isAlert: boolean;
     }): Promise<{
         id: bigint;
+        createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;
         psi: number;
         isAlert: boolean;
-        createdAt: Date;
     }>;
     getAlertState(blowerConfigId: string): Promise<{
         lastSaveAt: number;
         lastAlertState: boolean;
     }>;
     updateAlertState(blowerConfigId: string, lastSaveAt: Date, lastAlertState: boolean): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
