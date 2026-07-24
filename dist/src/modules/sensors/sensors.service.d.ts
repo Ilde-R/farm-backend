@@ -6,8 +6,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
     private readonly logger;
     constructor(sensorsRepository: SensorsRepository);
     registerBlower(tenantId: string, blowerId: string): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;
@@ -21,8 +21,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
         lastAlertState: boolean;
     }>;
     create(data: CreateSensorDto): Promise<{
-        id: bigint;
         tenantId: string;
+        id: bigint;
         createdAt: Date;
         psi: number;
         isAlert: boolean;
@@ -30,8 +30,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
     } | null>;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;
@@ -54,8 +54,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
         uptimeMs?: number;
         freeHeap?: number;
     }): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;
@@ -72,8 +72,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;
@@ -87,8 +87,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
         lastAlertState: boolean;
     }>;
     getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;
@@ -102,8 +102,8 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, an
         lastAlertState: boolean;
     } | null>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        id: string;
         tenantId: string;
+        id: string;
         blowerId: string;
         name: string | null;
         currentThreshold: number;

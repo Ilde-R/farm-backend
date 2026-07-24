@@ -14,17 +14,31 @@ export abstract class BaseRepository<T, CreateDto, UpdateDto> {
   }
 
   async findAll(pagination: PaginationQueryDto, extraFilter?: any) {
-    const { page = 1, limit = 10 } = pagination;
+    const { page = 1, limit = 10, search, tenantId } = pagination;
     const skip = (page - 1) * limit;
+
+    const where: any = { ...extraFilter };
+
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    if (search) {
+      where.OR = [
+        { username: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
     const [items, total] = await Promise.all([
       this.model.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         select: this.defaultSelect,
       }),
-      this.model.count({}),
+      this.model.count({ where }),
     ]);
 
     return { items, total };

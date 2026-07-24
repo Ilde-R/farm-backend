@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildPaginatedResponse = buildPaginatedResponse;
 function buildPaginatedResponse(data, totalCount, page, limit) {
     return {
-        data,
+        items: data,
         meta: {
             totalItems: totalCount,
             itemCount: data.length,

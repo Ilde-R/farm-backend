@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Query,
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -12,6 +13,7 @@ import { UsersService } from './users.service';
 import type { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()
@@ -20,9 +22,15 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar usuarios del tenant actual' })
-  async findAll(@Req() req: RequestWithUser) {
-    return this.usersService.findByTenant(req.user.tenantId);
+  @ApiOperation({ summary: 'Listar usuarios del tenant actual (paginado)' })
+  async findAll(
+    @Req() req: RequestWithUser,
+    @Query() pagination: PaginationQueryDto,
+  ) {
+    return this.usersService.findAll({
+      ...pagination,
+      tenantId: req.user.tenantId,
+    });
   }
 
   @Get('profile')

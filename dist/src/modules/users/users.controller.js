@@ -18,13 +18,17 @@ const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
 const update_profile_dto_1 = require("./dto/update-profile.dto");
 const change_password_dto_1 = require("./dto/change-password.dto");
+const pagination_query_dto_1 = require("../../common/dto/pagination-query.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
         this.usersService = usersService;
     }
-    async findAll(req) {
-        return this.usersService.findByTenant(req.user.tenantId);
+    async findAll(req, pagination) {
+        return this.usersService.findAll({
+            ...pagination,
+            tenantId: req.user.tenantId,
+        });
     }
     async getProfile(req) {
         return this.usersService.getProfile(req.user.sub);
@@ -42,10 +46,11 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Listar usuarios del tenant actual' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar usuarios del tenant actual (paginado)' }),
     __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, pagination_query_dto_1.PaginationQueryDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "findAll", null);
 __decorate([

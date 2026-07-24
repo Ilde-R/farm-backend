@@ -7,7 +7,7 @@ export function buildPaginatedResponse<T>(
   limit: number,
 ): PaginatedResult<T> {
   return {
-    data,
+    items: data,
     meta: {
       totalItems: totalCount,
       itemCount: data.length,
