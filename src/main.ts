@@ -6,10 +6,13 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { envs } from './config';
 import helmet from 'helmet';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.use(
     helmet({
@@ -42,7 +45,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Granja')
     .setDescription('Sistema de sensores')
-    .setVersion('0.1.3')
+    .setVersion('0.1.4')
     .addTag('granja')
     .addBearerAuth()
     .build();

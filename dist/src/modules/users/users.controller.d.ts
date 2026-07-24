@@ -7,21 +7,21 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     findAll(req: RequestWithUser): Promise<{
         id: string;
-        username: string;
         email: string;
+        username: string;
     }[]>;
     getProfile(req: RequestWithUser): Promise<{
         id: string;
-        tenantId: string | null;
-        username: string;
-        email: string;
         createdAt: Date;
         updatedAt: Date;
+        email: string;
+        tenantId: string | null;
+        username: string;
     }>;
     updateProfile(req: RequestWithUser, updateProflileDto: UpdateProfileDto): Promise<{
         id: string;
-        username: string;
         email: string;
+        username: string;
     }>;
     changePassword(req: RequestWithUser, changePasswordDto: ChangePasswordDto): Promise<{
         message: string;

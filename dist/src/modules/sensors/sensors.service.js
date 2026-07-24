@@ -24,8 +24,6 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
     async registerBlower(tenantId, blowerId) {
         return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
     }
-    lastSaveTime = new Map();
-    lastAlertState = new Map();
     async create(data) {
         if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
             this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
@@ -36,14 +34,11 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
         }
+        const { lastSaveAt, lastAlertState } = await this.sensorsRepository.getAlertState(data.blowerConfigId);
         const now = Date.now();
-        const blowerId = data.blowerId;
-        const lastSave = this.lastSaveTime.get(blowerId) || 0;
-        const lastAlert = this.lastAlertState.get(blowerId) ?? false;
-        const alertChanged = isAlert !== lastAlert;
-        if (now - lastSave >= 300000 || alertChanged) {
-            this.lastSaveTime.set(blowerId, now);
-            this.lastAlertState.set(blowerId, isAlert);
+        const alertChanged = isAlert !== lastAlertState;
+        if (now - lastSaveAt >= 300000 || alertChanged) {
+            await this.sensorsRepository.updateAlertState(data.blowerConfigId, new Date(now), isAlert);
             return this.sensorsRepository.createReading({
                 tenant: { connect: { id: data.tenantId } },
                 blowerConfig: { connect: { id: data.blowerConfigId } },

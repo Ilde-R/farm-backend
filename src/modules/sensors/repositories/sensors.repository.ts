@@ -62,22 +62,28 @@ export class SensorsRepository extends BaseRepository<
     return this.prisma.blowerConfig.findMany({ where: { tenantId } });
   }
 
-  async updateDeviceMetadata(blowerConfigId: string, data: {
-    firmwareVersion?: string;
-    wifiRssi?: number;
-    uptimeMs?: number;
-    freeHeap?: number;
-  }) {
+  async updateDeviceMetadata(
+    blowerConfigId: string,
+    data: {
+      firmwareVersion?: string;
+      wifiRssi?: number;
+      uptimeMs?: number;
+      freeHeap?: number;
+    },
+  ) {
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },
       data,
     });
   }
 
-  async updateDeviceConfig(blowerConfigId: string, data: {
-    readIntervalMs?: number;
-    scaleFactor?: number;
-  }) {
+  async updateDeviceConfig(
+    blowerConfigId: string,
+    data: {
+      readIntervalMs?: number;
+      scaleFactor?: number;
+    },
+  ) {
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },
       data,
@@ -92,5 +98,32 @@ export class SensorsRepository extends BaseRepository<
 
   async createReading(data: any) {
     return this.prisma.pressureReading.create({ data });
+  }
+
+  async getAlertState(blowerConfigId: string) {
+    const config = await this.prisma.blowerConfig.findUnique({
+      where: {
+        id: blowerConfigId,
+      },
+      select: {
+        lastSaveAt: true,
+        lastAlertState: true,
+      },
+    });
+    return {
+      lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
+      lastAlertState: config?.lastAlertState ?? false,
+    };
+  }
+
+  async updateAlertState(
+    blowerConfigId: string,
+    lastSaveAt: Date,
+    lastAlertState: boolean,
+  ) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data: { lastSaveAt, lastAlertState },
+    });
   }
 }

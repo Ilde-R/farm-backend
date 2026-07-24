@@ -11,9 +11,11 @@ const nestjs_api_reference_1 = require("@scalar/nestjs-api-reference");
 const common_1 = require("@nestjs/common");
 const config_1 = require("./config");
 const helmet_1 = __importDefault(require("helmet"));
+const logging_interceptor_1 = require("./common/interceptors/logging.interceptor");
 async function bootstrap() {
     const logger = new common_1.Logger('Main');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor());
     app.use((0, helmet_1.default)({
         crossOriginEmbedderPolicy: false,
         contentSecurityPolicy: {
@@ -39,7 +41,7 @@ async function bootstrap() {
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Granja')
         .setDescription('Sistema de sensores')
-        .setVersion('0.1.3')
+        .setVersion('0.1.4')
         .addTag('granja')
         .addBearerAuth()
         .build();

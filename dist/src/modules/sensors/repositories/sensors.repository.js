@@ -79,6 +79,27 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
     async createReading(data) {
         return this.prisma.pressureReading.create({ data });
     }
+    async getAlertState(blowerConfigId) {
+        const config = await this.prisma.blowerConfig.findUnique({
+            where: {
+                id: blowerConfigId,
+            },
+            select: {
+                lastSaveAt: true,
+                lastAlertState: true,
+            },
+        });
+        return {
+            lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
+            lastAlertState: config?.lastAlertState ?? false,
+        };
+    }
+    async updateAlertState(blowerConfigId, lastSaveAt, lastAlertState) {
+        return this.prisma.blowerConfig.update({
+            where: { id: blowerConfigId },
+            data: { lastSaveAt, lastAlertState },
+        });
+    }
 };
 exports.SensorsRepository = SensorsRepository;
 exports.SensorsRepository = SensorsRepository = __decorate([

@@ -19,6 +19,8 @@ const throttler_1 = require("@nestjs/throttler");
 const auth_guard_1 = require("./modules/auth/guards/auth.guard");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const prisma_client_exception_filter_1 = require("./common/filters/prisma-client-exception.filter");
+const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
+const logging_interceptor_1 = require("./common/interceptors/logging.interceptor");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -59,6 +61,14 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_FILTER,
                 useClass: prisma_client_exception_filter_1.PrismaClientExceptionFilter,
+            },
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: transform_interceptor_1.TransformInterceptor,
+            },
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: logging_interceptor_1.LoggingInterceptor,
             },
         ],
     })

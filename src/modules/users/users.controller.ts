@@ -26,7 +26,7 @@ export class UsersController {
   }
 
   @Get('profile')
-  @ApiOperation({ summary: 'Obtener perfil del usuario actual' })
+  @ApiOperation({ summary: 'Ver perfil actual' })
   async getProfile(@Req() req: RequestWithUser) {
     return this.usersService.getProfile(req.user.sub);
   }

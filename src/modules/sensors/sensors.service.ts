@@ -15,9 +15,6 @@ export class SensorsService extends BaseService<any, CreateSensorDto, any> {
     return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
   }
 
-  private lastSaveTime: Map<string, number> = new Map();
-  private lastAlertState: Map<string, boolean> = new Map();
-
   async create(data: CreateSensorDto) {
     if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
       this.logger.warn(`Missing required fields: ${JSON.stringify(data)}`);
@@ -34,16 +31,18 @@ export class SensorsService extends BaseService<any, CreateSensorDto, any> {
       );
     }
 
+    const { lastSaveAt, lastAlertState } =
+      await this.sensorsRepository.getAlertState(data.blowerConfigId);
+
     const now = Date.now();
-    const blowerId = data.blowerId;
-    const lastSave = this.lastSaveTime.get(blowerId) || 0;
-    const lastAlert = this.lastAlertState.get(blowerId) ?? false;
+    const alertChanged = isAlert !== lastAlertState;
 
-    const alertChanged = isAlert !== lastAlert;
-
-    if (now - lastSave >= 300000 || alertChanged) {
-      this.lastSaveTime.set(blowerId, now);
-      this.lastAlertState.set(blowerId, isAlert);
+    if (now - lastSaveAt >= 300000 || alertChanged) {
+      await this.sensorsRepository.updateAlertState(
+        data.blowerConfigId,
+        new Date(now),
+        isAlert,
+      );
 
       return this.sensorsRepository.createReading({
         tenant: { connect: { id: data.tenantId } },

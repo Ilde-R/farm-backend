@@ -50,7 +50,7 @@ __decorate([
 ], UsersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('profile'),
-    (0, swagger_1.ApiOperation)({ summary: 'Obtener perfil del usuario actual' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Ver perfil actual' }),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
