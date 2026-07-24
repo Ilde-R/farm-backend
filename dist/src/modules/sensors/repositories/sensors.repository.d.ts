@@ -5,11 +5,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
     private readonly prisma;
     constructor(prisma: PrismaService);
     upsertBlowerConfig(tenantId: string, blowerId: string, currentThreshold?: number): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -18,11 +18,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     }>;
     updateBlowerThreshold(blowerConfigId: string, threshold: number): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -31,11 +31,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     }>;
     getBlowerConfig(tenantId: string, blowerId: string): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -44,11 +44,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     } | null>;
     getFirstBlowerConfig(tenantId: string): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -57,11 +57,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     } | null>;
     getAllBlowerConfigs(tenantId: string): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -75,11 +75,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         uptimeMs?: number;
         freeHeap?: number;
     }): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -91,11 +91,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -104,11 +104,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     }>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        blowerId: string;
-        tenantId: string;
-        currentThreshold: number;
         id: string;
         name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: number | null;
@@ -117,11 +117,11 @@ export declare class SensorsRepository extends BaseRepository<any, CreateSensorD
         scaleFactor: number | null;
     } | null>;
     createReading(data: any): Promise<{
-        psi: number;
-        tenantId: string;
-        blowerConfigId: string | null;
-        isAlert: boolean;
         id: bigint;
         createdAt: Date;
+        tenantId: string;
+        blowerConfigId: string | null;
+        psi: number;
+        isAlert: boolean;
     }>;
 }
