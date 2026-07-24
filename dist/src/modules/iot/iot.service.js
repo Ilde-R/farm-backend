@@ -21,6 +21,9 @@ let IotService = IotService_1 = class IotService {
         this.prisma = prisma;
     }
     async provision(tenantId, dto) {
+        if (!tenantId) {
+            throw new common_1.BadRequestException('Token JWT no contiene tenantId válido');
+        }
         const tenant = await this.prisma.tenant.findUnique({
             where: { id: tenantId },
         });
@@ -84,12 +87,25 @@ let IotService = IotService_1 = class IotService {
             },
             include: {
                 blowerConfig: {
-                    select: { blowerId: true, name: true },
+                    select: {
+                        blowerId: true,
+                        name: true,
+                        firmwareVersion: true,
+                        wifiRssi: true,
+                        uptimeMs: true,
+                        freeHeap: true,
+                        readIntervalMs: true,
+                        scaleFactor: true,
+                    },
                 },
             },
         });
     }
     async revokeDeviceKey(key) {
+        const existing = await this.prisma.deviceKey.findUnique({ where: { key } });
+        if (!existing) {
+            throw new common_1.NotFoundException(`Device key not found`);
+        }
         return this.prisma.deviceKey.update({
             where: { key },
             data: { isActive: false },

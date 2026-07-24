@@ -12,10 +12,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const user_repository_1 = require("./repositories/user.repository");
-let UsersService = class UsersService {
+const base_service_1 = require("../../common/abstracts/base.service");
+let UsersService = class UsersService extends base_service_1.BaseService {
     repository;
     constructor(repository) {
+        super(repository);
         this.repository = repository;
+    }
+    async findByTenant(tenantId) {
+        return this.repository.findByTenant(tenantId);
+    }
+    async getProfile(userId) {
+        const user = await this.repository.findOne(userId);
+        if (!user) {
+            throw new common_1.NotFoundException('Usuario no encontrado');
+        }
+        return user;
     }
 };
 exports.UsersService = UsersService;

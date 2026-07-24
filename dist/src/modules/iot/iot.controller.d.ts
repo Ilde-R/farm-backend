@@ -15,6 +15,12 @@ export declare class IotController {
         blowerConfig: {
             name: string | null;
             blowerId: string;
+            firmwareVersion: string | null;
+            wifiRssi: number | null;
+            uptimeMs: number | null;
+            freeHeap: number | null;
+            readIntervalMs: number | null;
+            scaleFactor: number | null;
         };
     } & {
         id: string;

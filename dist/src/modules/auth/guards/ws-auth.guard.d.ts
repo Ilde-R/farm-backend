@@ -12,11 +12,13 @@ export interface WsClientData {
         blowerId: string;
         tenantId: string;
         currentThreshold: number;
+        deviceKey: string;
     };
 }
 export declare class WsAuthGuard implements CanActivate {
     private readonly jwtService;
     private readonly iotService;
+    private readonly logger;
     constructor(jwtService: JwtService, iotService: IotService);
     canActivate(context: ExecutionContext): Promise<boolean>;
 }

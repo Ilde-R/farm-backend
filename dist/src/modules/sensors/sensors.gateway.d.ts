@@ -1,15 +1,27 @@
-import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets';
 import { SensorsService } from './sensors.service';
 import { Server } from 'ws';
 import WebSocket from 'ws';
-export declare class SensorsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+import { IotService } from '../iot/iot.service';
+import { JwtService } from '@nestjs/jwt';
+export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     private readonly sensorsService;
+    private readonly iotService;
+    private readonly jwtService;
     private readonly logger;
     server: Server;
     private connectedClients;
-    constructor(sensorsService: SensorsService);
-    handleConnection(client: WebSocket): void;
+    private heartbeatTimers;
+    private ensureClientInfo;
+    constructor(sensorsService: SensorsService, iotService: IotService, jwtService: JwtService);
+    private broadcastToUsers;
+    private getOnlineDevices;
+    afterInit(server: Server): void;
+    private startHeartbeat;
+    private clearHeartbeat;
+    handleConnection(client: WebSocket): Promise<void>;
     handleDisconnect(client: WebSocket): void;
+    private isDeviceActive;
     handleRegisterBlower(data: {
         tenantId: string;
         blowerId: string;
@@ -23,13 +35,8 @@ export declare class SensorsGateway implements OnGatewayConnection, OnGatewayDis
         blowerConfigId?: string;
         tenantId?: string;
     }, client: WebSocket): Promise<{
-        id: bigint;
-        createdAt: Date;
-        tenantId: string;
-        blowerConfigId: string | null;
-        psi: number;
-        isAlert: boolean;
-    } | null | undefined>;
+        ok: boolean;
+    } | undefined>;
     handleSetNewThreshold(data: {
         blowerId?: string;
         threshold: number;
@@ -43,7 +50,7 @@ export declare class SensorsGateway implements OnGatewayConnection, OnGatewayDis
         threshold: number;
         blowerId: string;
         message?: undefined;
-    }>;
+    } | undefined>;
     handleGetThreshold(data: {
         blowerId?: string;
     }, client: WebSocket): Promise<{
@@ -53,5 +60,25 @@ export declare class SensorsGateway implements OnGatewayConnection, OnGatewayDis
     handleCurrentThreshold(data: {
         threshold: number;
         blowerId?: string;
-    }): void;
+    }, sender: WebSocket): void;
+    handleDeviceInfo(data: {
+        firmware?: string;
+        rssi?: number;
+        uptime?: number;
+        heap?: number;
+    }, client: WebSocket): Promise<void>;
+    handleSetDeviceConfig(data: {
+        blowerId?: string;
+        readIntervalMs?: number;
+        scaleFactor?: number;
+    }, client: WebSocket): Promise<{
+        status: string;
+        message: string;
+    } | {
+        readIntervalMs?: number;
+        scaleFactor?: number;
+        status: string;
+        blowerId: string;
+        message?: undefined;
+    } | undefined>;
 }

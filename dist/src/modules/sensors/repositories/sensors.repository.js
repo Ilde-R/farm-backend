@@ -56,6 +56,26 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
             where: { tenantId },
         });
     }
+    async getAllBlowerConfigs(tenantId) {
+        return this.prisma.blowerConfig.findMany({ where: { tenantId } });
+    }
+    async updateDeviceMetadata(blowerConfigId, data) {
+        return this.prisma.blowerConfig.update({
+            where: { id: blowerConfigId },
+            data,
+        });
+    }
+    async updateDeviceConfig(blowerConfigId, data) {
+        return this.prisma.blowerConfig.update({
+            where: { id: blowerConfigId },
+            data,
+        });
+    }
+    async getBlowerConfigById(blowerConfigId) {
+        return this.prisma.blowerConfig.findUnique({
+            where: { id: blowerConfigId },
+        });
+    }
     async createReading(data) {
         return this.prisma.pressureReading.create({ data });
     }

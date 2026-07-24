@@ -39,7 +39,7 @@ async function bootstrap() {
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Granja')
         .setDescription('Sistema de sensores')
-        .setVersion('0.1.0')
+        .setVersion('0.1.2')
         .addTag('granja')
         .addBearerAuth()
         .build();

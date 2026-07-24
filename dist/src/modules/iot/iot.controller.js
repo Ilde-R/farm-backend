@@ -36,7 +36,7 @@ exports.IotController = IotController;
 __decorate([
     (0, common_1.Post)('provision'),
     (0, swagger_1.ApiOperation)({
-        summary: 'Provision a new IoT device and generate a device key',
+        summary: 'Provisionar un nuevo dispositivo IoT y generar una device key',
     }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
@@ -46,7 +46,7 @@ __decorate([
 ], IotController.prototype, "provision", null);
 __decorate([
     (0, common_1.Get)('devices'),
-    (0, swagger_1.ApiOperation)({ summary: 'List all device keys for a tenant' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar todas las device keys de un tenant' }),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -54,14 +54,14 @@ __decorate([
 ], IotController.prototype, "listDevices", null);
 __decorate([
     (0, common_1.Patch)('devices/:key/revoke'),
-    (0, swagger_1.ApiOperation)({ summary: 'Revoke a device key' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Revocar una device key' }),
     __param(0, (0, common_1.Param)('key')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], IotController.prototype, "revokeDevice", null);
 exports.IotController = IotController = __decorate([
-    (0, swagger_1.ApiTags)('iot'),
+    (0, swagger_1.ApiTags)('Iot'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('iot'),
     __metadata("design:paramtypes", [iot_service_1.IotService])

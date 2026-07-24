@@ -13,20 +13,23 @@ exports.UserRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../prisma/prisma.service");
 const base_repository_1 = require("../../../common/abstracts/base.repository");
+const user_select_1 = require("../selects/user.select");
 let UserRepository = class UserRepository extends base_repository_1.BaseRepository {
     prisma;
     constructor(prisma) {
-        super(prisma.user);
+        super(prisma.user, user_select_1.userSelect);
         this.prisma = prisma;
     }
     async findByEmail(email) {
         return this.prisma.user.findUnique({
             where: { email },
+            select: user_select_1.userSelect,
         });
     }
     async findByTenant(tenantId) {
         return this.prisma.user.findMany({
             where: { tenantId },
+            select: user_select_1.userSelect,
         });
     }
 };

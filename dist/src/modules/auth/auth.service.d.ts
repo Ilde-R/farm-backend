@@ -21,7 +21,7 @@ export declare class AuthService {
         id: string;
         username: string;
         email: string;
-        tenantId: string | null;
+        tenantId: string;
         access_token: string;
         refresh_token: string;
     }>;

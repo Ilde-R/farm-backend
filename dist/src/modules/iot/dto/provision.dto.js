@@ -18,14 +18,14 @@ class ProvisionDto {
 }
 exports.ProvisionDto = ProvisionDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Blower identifier within the tenant' }),
+    (0, swagger_1.ApiProperty)({ description: 'Identificador del blower dentro del tenant' }),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ProvisionDto.prototype, "blowerId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Human-readable name for the blower',
+        description: 'Nombre descriptivo del blower',
         required: false,
     }),
     (0, class_validator_1.IsOptional)(),

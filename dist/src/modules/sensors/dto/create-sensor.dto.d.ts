@@ -1,8 +1,8 @@
-export declare class CreateSensorDto {
+export interface CreateSensorDto {
+    psi: number;
     blowerId?: string;
     tenantId?: string;
     blowerConfigId?: string;
     isAlert?: boolean;
-    psi: number;
     currentThreshold?: number;
 }

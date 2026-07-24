@@ -89,19 +89,30 @@ let AuthService = class AuthService {
         const valid = await bcrypt.compare(loginDto.password, user.credential.password);
         if (!valid)
             throw new common_1.UnauthorizedException('Credentials not valid');
+        let tenantId = user.tenantId;
+        if (!tenantId) {
+            const tenant = await this.prisma.tenant.create({
+                data: { name: user.username },
+            });
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { tenantId: tenant.id },
+            });
+            tenantId = tenant.id;
+        }
         const refreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, refreshToken, expiresAt);
         const payload = {
             sub: user.id,
             email: user.email,
-            tenantId: user.tenantId,
+            tenantId,
         };
         return {
             id: user.id,
             username: user.username,
             email: user.email,
-            tenantId: user.tenantId,
+            tenantId,
             access_token: this.jwtService.sign(payload),
             refresh_token: refreshToken,
         };
@@ -119,13 +130,24 @@ let AuthService = class AuthService {
         });
         if (!user)
             throw new common_1.UnauthorizedException('User not found');
+        let tenantId = user.tenantId;
+        if (!tenantId) {
+            const tenant = await this.prisma.tenant.create({
+                data: { name: user.username },
+            });
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { tenantId: tenant.id },
+            });
+            tenantId = tenant.id;
+        }
         const newRefreshToken = (0, crypto_1.randomBytes)(64).toString('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await this.authRepository.createSession(user.id, newRefreshToken, expiresAt);
         const payload = {
             sub: user.id,
             email: user.email,
-            tenantId: user.tenantId,
+            tenantId,
         };
         return {
             access_token: this.jwtService.sign(payload),

@@ -22,9 +22,7 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         this.sensorsRepository = sensorsRepository;
     }
     async registerBlower(tenantId, blowerId) {
-        const config = await this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
-        this.logger.log(`Blower registered: ${blowerId} → configId: ${config.id}`);
-        return config;
+        return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
     }
     lastSaveTime = new Map();
     lastAlertState = new Map();
@@ -35,9 +33,6 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         }
         const currentThreshold = data.currentThreshold ?? 2.0;
         const isAlert = data.psi <= currentThreshold;
-        if (isAlert) {
-            this.logger.warn(`ALERT! Blower lost pressure: ${data.psi} PSI`);
-        }
         if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
         }
@@ -75,6 +70,25 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
             return null;
         }
         return this.sensorsRepository.updateBlowerThreshold(config.id, threshold);
+    }
+    async getAllThresholds(tenantId) {
+        const configs = await this.sensorsRepository.getAllBlowerConfigs(tenantId);
+        return configs.map((c) => ({
+            blowerId: c.blowerId,
+            threshold: c.currentThreshold,
+        }));
+    }
+    async updateDeviceMetadata(blowerConfigId, data) {
+        return this.sensorsRepository.updateDeviceMetadata(blowerConfigId, data);
+    }
+    async updateDeviceConfig(blowerConfigId, data) {
+        return this.sensorsRepository.updateDeviceConfig(blowerConfigId, data);
+    }
+    async getBlowerConfigByTenantAndId(tenantId, blowerId) {
+        return this.sensorsRepository.getBlowerConfig(tenantId, blowerId);
+    }
+    async getBlowerConfigById(blowerConfigId) {
+        return this.sensorsRepository.getBlowerConfigById(blowerConfigId);
     }
 };
 exports.SensorsService = SensorsService;

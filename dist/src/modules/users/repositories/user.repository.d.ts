@@ -8,18 +8,12 @@ export declare class UserRepository extends BaseRepository<User, CreateUserDto, 
     constructor(prisma: PrismaService);
     findByEmail(email: string): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         email: string;
-        tenantId: string | null;
         username: string;
     } | null>;
     findByTenant(tenantId: string): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         email: string;
-        tenantId: string | null;
         username: string;
     }[]>;
 }

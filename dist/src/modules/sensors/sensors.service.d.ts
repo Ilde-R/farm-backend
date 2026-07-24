@@ -1,8 +1,7 @@
 import { CreateSensorDto } from './dto/create-sensor.dto';
-import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
-export declare class SensorsService extends BaseService<any, CreateSensorDto, UpdateSensorDto> {
+export declare class SensorsService extends BaseService<any, CreateSensorDto, any> {
     private readonly sensorsRepository;
     private readonly logger;
     constructor(sensorsRepository: SensorsRepository);
@@ -12,6 +11,12 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, Up
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
     }>;
     private lastSaveTime;
     private lastAlertState;
@@ -30,5 +35,75 @@ export declare class SensorsService extends BaseService<any, CreateSensorDto, Up
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
+    } | null>;
+    getAllThresholds(tenantId: string): Promise<{
+        blowerId: string;
+        threshold: number;
+    }[]>;
+    updateDeviceMetadata(blowerConfigId: string, data: {
+        firmwareVersion?: string;
+        wifiRssi?: number;
+        uptimeMs?: number;
+        freeHeap?: number;
+    }): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
+    }>;
+    updateDeviceConfig(blowerConfigId: string, data: {
+        readIntervalMs?: number;
+        scaleFactor?: number;
+    }): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
+    }>;
+    getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
+    } | null>;
+    getBlowerConfigById(blowerConfigId: string): Promise<{
+        id: string;
+        name: string | null;
+        tenantId: string;
+        blowerId: string;
+        currentThreshold: number;
+        firmwareVersion: string | null;
+        wifiRssi: number | null;
+        uptimeMs: number | null;
+        freeHeap: number | null;
+        readIntervalMs: number | null;
+        scaleFactor: number | null;
     } | null>;
 }

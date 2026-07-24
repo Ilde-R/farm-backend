@@ -8,22 +8,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var WsAuthGuard_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WsAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const websockets_1 = require("@nestjs/websockets");
 const iot_service_1 = require("../../iot/iot.service");
-let WsAuthGuard = class WsAuthGuard {
+let WsAuthGuard = WsAuthGuard_1 = class WsAuthGuard {
     jwtService;
     iotService;
+    logger = new common_1.Logger(WsAuthGuard_1.name);
     constructor(jwtService, iotService) {
         this.jwtService = jwtService;
         this.iotService = iotService;
     }
     async canActivate(context) {
         const client = context.switchToWs().getClient();
-        const req = client.upgradeReq;
+        const req = (client.__upgradeReq ||
+            client.upgradeReq);
         if (!req) {
             throw new websockets_1.WsException('No upgrade request available');
         }
@@ -37,9 +40,10 @@ let WsAuthGuard = class WsAuthGuard {
         if (deviceKey) {
             const device = await this.iotService.validateDeviceKey(deviceKey);
             if (!device) {
+                this.logger.warn(`Device key inválido`);
                 throw new websockets_1.WsException('Device key inválido o inactivo');
             }
-            client.device = device;
+            client.device = { ...device, deviceKey };
             return true;
         }
         if (token) {
@@ -56,7 +60,7 @@ let WsAuthGuard = class WsAuthGuard {
     }
 };
 exports.WsAuthGuard = WsAuthGuard;
-exports.WsAuthGuard = WsAuthGuard = __decorate([
+exports.WsAuthGuard = WsAuthGuard = WsAuthGuard_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [jwt_1.JwtService,
         iot_service_1.IotService])
