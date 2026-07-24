@@ -1,15 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateSensorDto } from './dto/create-sensor.dto';
-import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
 
 @Injectable()
-export class SensorsService extends BaseService<
-  any,
-  CreateSensorDto,
-  UpdateSensorDto
-> {
+export class SensorsService extends BaseService<any, CreateSensorDto, any> {
   private readonly logger = new Logger(SensorsService.name);
 
   constructor(private readonly sensorsRepository: SensorsRepository) {
@@ -17,10 +12,7 @@ export class SensorsService extends BaseService<
   }
 
   async registerBlower(tenantId: string, blowerId: string) {
-    return this.sensorsRepository.upsertBlowerConfig(
-      tenantId,
-      blowerId,
-    );
+    return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
   }
 
   private lastSaveTime: Map<string, number> = new Map();
@@ -98,27 +90,32 @@ export class SensorsService extends BaseService<
   async getAllThresholds(
     tenantId: string,
   ): Promise<{ blowerId: string; threshold: number }[]> {
-    const configs =
-      await this.sensorsRepository.getAllBlowerConfigs(tenantId);
+    const configs = await this.sensorsRepository.getAllBlowerConfigs(tenantId);
     return configs.map((c) => ({
       blowerId: c.blowerId,
       threshold: c.currentThreshold,
     }));
   }
 
-  async updateDeviceMetadata(blowerConfigId: string, data: {
-    firmwareVersion?: string;
-    wifiRssi?: number;
-    uptimeMs?: number;
-    freeHeap?: number;
-  }) {
+  async updateDeviceMetadata(
+    blowerConfigId: string,
+    data: {
+      firmwareVersion?: string;
+      wifiRssi?: number;
+      uptimeMs?: number;
+      freeHeap?: number;
+    },
+  ) {
     return this.sensorsRepository.updateDeviceMetadata(blowerConfigId, data);
   }
 
-  async updateDeviceConfig(blowerConfigId: string, data: {
-    readIntervalMs?: number;
-    scaleFactor?: number;
-  }) {
+  async updateDeviceConfig(
+    blowerConfigId: string,
+    data: {
+      readIntervalMs?: number;
+      scaleFactor?: number;
+    },
+  ) {
     return this.sensorsRepository.updateDeviceConfig(blowerConfigId, data);
   }
 

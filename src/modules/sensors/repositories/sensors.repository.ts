@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../../common/abstracts/base.repository';
 import { CreateSensorDto } from '../dto/create-sensor.dto';
-import { UpdateSensorDto } from '../dto/update-sensor.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class SensorsRepository extends BaseRepository<
   any,
   CreateSensorDto,
-  UpdateSensorDto
+  any
 > {
   constructor(private readonly prisma: PrismaService) {
     super(prisma.pressureReading);
