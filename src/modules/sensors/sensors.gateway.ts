@@ -55,6 +55,8 @@ function getClientInfo(client: WebSocket): EnrichedClient | undefined {
   return undefined;
 }
 
+const DEVICE_REVALIDATION_INTERVAL_MS = 5 * 60 * 1000;
+
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
 export class SensorsGateway
@@ -67,6 +69,7 @@ export class SensorsGateway
 
   private connectedClients = new Map<WebSocket, EnrichedClient>();
   private heartbeatTimers = new Map<WebSocket, ReturnType<typeof setTimeout>>();
+  private revalidationTimers = new Map<WebSocket, ReturnType<typeof setInterval>>();
 
   private ensureClientInfo(client: WebSocket): EnrichedClient | undefined {
     let info = this.connectedClients.get(client);
@@ -140,6 +143,40 @@ export class SensorsGateway
     }
   }
 
+  /**
+   * Starts a periodic re-validation timer for device keys.
+   * Instead of validating on every message (1 query/message), we validate
+   * once on connection and then re-check every 5 minutes.
+   */
+  private startDeviceRevalidation(client: WebSocket) {
+    const device = (client as unknown as { device?: DeviceAuth }).device;
+    if (!device?.deviceKey) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const valid = await this.iotService.validateDeviceKey(device.deviceKey);
+        if (!valid) {
+          this.logger.warn(`Device key revoked mid-session, closing connection`);
+          client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
+          client.close(4001, 'Device key revoked');
+          this.clearDeviceRevalidation(client);
+        }
+      } catch (e) {
+        this.logger.warn(`Device revalidation error: ${e}`);
+      }
+    }, DEVICE_REVALIDATION_INTERVAL_MS);
+
+    this.revalidationTimers.set(client, timer);
+  }
+
+  private clearDeviceRevalidation(client: WebSocket) {
+    const timer = this.revalidationTimers.get(client);
+    if (timer) {
+      clearInterval(timer);
+      this.revalidationTimers.delete(client);
+    }
+  }
+
   async handleConnection(client: WebSocket) {
     const req = (client as any).__upgradeReq as IncomingMessage;
     if (req) {
@@ -193,6 +230,8 @@ export class SensorsGateway
     });
 
     this.startHeartbeat(client);
+    // Start periodic device key re-validation (every 5 min instead of every message)
+    this.startDeviceRevalidation(client);
 
     const device = (client as unknown as { device?: DeviceAuth }).device;
     const user = (client as unknown as { user?: UserAuth }).user;
@@ -230,6 +269,7 @@ export class SensorsGateway
 
   handleDisconnect(client: WebSocket) {
     this.clearHeartbeat(client);
+    this.clearDeviceRevalidation(client);
     const info = this.connectedClients.get(client);
     if (info?.blowerId) {
       this.broadcastToUsers(info.tenantId, {
@@ -240,28 +280,12 @@ export class SensorsGateway
     this.connectedClients.delete(client);
   }
 
-  private async isDeviceActive(client: WebSocket): Promise<boolean> {
-    const device = (client as unknown as { device?: DeviceAuth }).device;
-    if (!device?.deviceKey) return true;
-
-    const valid = await this.iotService.validateDeviceKey(device.deviceKey);
-    if (!valid) {
-      this.logger.warn(`Device key revoked mid-session, closing connection`);
-      client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
-      client.close(4001, 'Device key revoked');
-      return false;
-    }
-    return true;
-  }
-
   @SubscribeMessage('register_blower')
   async handleRegisterBlower(
     @MessageBody() data: { tenantId: string; blowerId: string },
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      if (!(await this.isDeviceActive(client))) return;
-
       const clientInfo = this.ensureClientInfo(client);
       const tenantId = data.tenantId || clientInfo?.tenantId;
       const blowerId = data.blowerId || clientInfo?.blowerId;
@@ -308,8 +332,6 @@ export class SensorsGateway
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      if (!(await this.isDeviceActive(client))) return;
-
       const clientInfo = this.ensureClientInfo(client);
 
       const enriched: CreateSensorDto = {
@@ -370,8 +392,6 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string; threshold: number },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;
@@ -405,8 +425,6 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const tenantId = clientInfo?.tenantId;
     const blowerId = data?.blowerId || clientInfo?.blowerId;
@@ -463,8 +481,6 @@ export class SensorsGateway
     },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     if (!clientInfo?.blowerConfigId) return;
 
@@ -496,8 +512,6 @@ export class SensorsGateway
     },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;

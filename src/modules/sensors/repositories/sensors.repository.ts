@@ -132,4 +132,23 @@ export class SensorsRepository extends BaseRepository<
       data: { lastSaveAt, lastAlertState },
     });
   }
+  
+  async createManyReadings(
+    data: {
+      tenantId: string;
+      blowerConfigId: string;
+      psi: number;
+      isAlert: boolean;
+    }[],
+  ) {
+    if (data.length === 0) return;
+    return this.prisma.pressureReading.createMany({
+      data: data.map((r) => ({
+        tenantId: r.tenantId,
+        blowerConfigId: r.blowerConfigId,
+        psi: r.psi,
+        isAlert: r.isAlert,
+      })),
+    });
+  }
 }

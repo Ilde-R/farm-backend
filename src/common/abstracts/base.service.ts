@@ -26,14 +26,24 @@ export abstract class BaseService<T, CreateDto, UpdateDto> {
   }
 
   async update(id: string, updateDto: UpdateDto): Promise<T> {
-    await this.findOne(id);
-
-    return this.userRepository.update(id, updateDto);
+    try {
+      return await this.userRepository.update(id, updateDto);
+    } catch (error: any) {
+      if (error?.code === 'P2025') {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 
   async remove(id: string): Promise<T> {
-    await this.findOne(id);
-
-    return this.userRepository.remove(id);
+    try {
+      return await this.userRepository.remove(id);
+    } catch (error: any) {
+      if (error?.code === 'P2025') {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 }

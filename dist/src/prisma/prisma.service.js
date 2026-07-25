@@ -27,7 +27,7 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
             connectionString,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000,
-            max: 5,
+            max: 20,
         });
         pool.on('error', (err) => {
             this.logger.warn(`Pool idle connection error: ${err.message}`);

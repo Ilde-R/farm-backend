@@ -1,11 +1,16 @@
+import { OnModuleDestroy } from '@nestjs/common';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
 import { PressureReading } from '@prisma/client';
-export declare class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> {
+export declare class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> implements OnModuleDestroy {
     private readonly sensorsRepository;
     private readonly logger;
+    private alertCache;
+    private readingBuffer;
+    private flushTimer;
     constructor(sensorsRepository: SensorsRepository);
+    onModuleDestroy(): void;
     registerBlower(tenantId: string, blowerId: string): Promise<{
         id: string;
         name: string | null;
@@ -21,14 +26,13 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
+    private getCachedAlertState;
+    private updateCachedAlertState;
     createReading(data: CreateSensorDto): Promise<{
-        id: bigint;
-        createdAt: Date;
-        tenantId: string;
-        blowerConfigId: string | null;
         psi: number;
         isAlert: boolean;
     } | null>;
+    private flushReadingBuffer;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
         id: string;

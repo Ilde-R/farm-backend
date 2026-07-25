@@ -12,6 +12,7 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
     server: Server;
     private connectedClients;
     private heartbeatTimers;
+    private revalidationTimers;
     private ensureClientInfo;
     constructor(sensorsService: SensorsService, iotService: IotService, jwtService: JwtService);
     private broadcastToUsers;
@@ -19,9 +20,10 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
     afterInit(server: Server): void;
     private startHeartbeat;
     private clearHeartbeat;
+    private startDeviceRevalidation;
+    private clearDeviceRevalidation;
     handleConnection(client: WebSocket): Promise<void>;
     handleDisconnect(client: WebSocket): void;
-    private isDeviceActive;
     handleRegisterBlower(data: {
         tenantId: string;
         blowerId: string;
@@ -50,7 +52,7 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
         threshold: number;
         blowerId: string;
         message?: undefined;
-    } | undefined>;
+    }>;
     handleGetThreshold(data: {
         blowerId?: string;
     }, client: WebSocket): Promise<{
@@ -80,5 +82,5 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
         status: string;
         blowerId: string;
         message?: undefined;
-    } | undefined>;
+    }>;
 }

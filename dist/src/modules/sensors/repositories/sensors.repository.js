@@ -100,6 +100,18 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
             data: { lastSaveAt, lastAlertState },
         });
     }
+    async createManyReadings(data) {
+        if (data.length === 0)
+            return;
+        return this.prisma.pressureReading.createMany({
+            data: data.map((r) => ({
+                tenantId: r.tenantId,
+                blowerConfigId: r.blowerConfigId,
+                psi: r.psi,
+                isAlert: r.isAlert,
+            })),
+        });
+    }
 };
 exports.SensorsRepository = SensorsRepository;
 exports.SensorsRepository = SensorsRepository = __decorate([

@@ -9,7 +9,7 @@ exports.default = (0, config_1.defineConfig)({
         seed: 'prisma/seeds/seed.ts',
     },
     datasource: {
-        url: process.env['DATABASE_URL'],
+        url: process.env['DIRECT_DATABASE_URL'] || process.env['DATABASE_URL'],
     },
 });
 //# sourceMappingURL=prisma.config.js.map

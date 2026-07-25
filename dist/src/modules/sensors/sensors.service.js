@@ -14,15 +14,52 @@ exports.SensorsService = void 0;
 const common_1 = require("@nestjs/common");
 const base_service_1 = require("../../common/abstracts/base.service");
 const sensors_repository_1 = require("./repositories/sensors.repository");
+const ALERT_CACHE_TTL_MS = 5 * 60 * 1000;
+const BUFFER_FLUSH_INTERVAL_MS = 10 * 1000;
+const BUFFER_FLUSH_SIZE = 100;
 let SensorsService = SensorsService_1 = class SensorsService extends base_service_1.BaseService {
     sensorsRepository;
     logger = new common_1.Logger(SensorsService_1.name);
+    alertCache = new Map();
+    readingBuffer = [];
+    flushTimer = null;
     constructor(sensorsRepository) {
         super(sensorsRepository);
         this.sensorsRepository = sensorsRepository;
+        this.flushTimer = setInterval(() => {
+            this.flushReadingBuffer().catch((e) => this.logger.error(`Buffer flush error: ${e}`));
+        }, BUFFER_FLUSH_INTERVAL_MS);
+    }
+    onModuleDestroy() {
+        if (this.flushTimer) {
+            clearInterval(this.flushTimer);
+        }
+        this.flushReadingBuffer().catch((e) => this.logger.error(`Shutdown buffer flush error: ${e}`));
     }
     async registerBlower(tenantId, blowerId) {
         return this.sensorsRepository.upsertBlowerConfig(tenantId, blowerId);
+    }
+    async getCachedAlertState(blowerConfigId) {
+        const cached = this.alertCache.get(blowerConfigId);
+        const now = Date.now();
+        if (cached && (now - cached.cachedAt) < ALERT_CACHE_TTL_MS) {
+            return { lastSaveAt: cached.lastSaveAt, lastAlertState: cached.lastAlertState };
+        }
+        const state = await this.sensorsRepository.getAlertState(blowerConfigId);
+        this.alertCache.set(blowerConfigId, {
+            lastSaveAt: state.lastSaveAt,
+            lastAlertState: state.lastAlertState,
+            cachedAt: now,
+        });
+        return state;
+    }
+    async updateCachedAlertState(blowerConfigId, lastSaveAt, isAlert) {
+        await this.sensorsRepository.updateAlertState(blowerConfigId, lastSaveAt, isAlert);
+        this.alertCache.set(blowerConfigId, {
+            lastSaveAt: lastSaveAt.getTime(),
+            lastAlertState: isAlert,
+            cachedAt: Date.now(),
+        });
     }
     async createReading(data) {
         if (!data.blowerConfigId || !data.tenantId || !data.blowerId) {
@@ -34,19 +71,41 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
         }
-        const { lastSaveAt, lastAlertState } = await this.sensorsRepository.getAlertState(data.blowerConfigId);
+        const { lastSaveAt, lastAlertState } = await this.getCachedAlertState(data.blowerConfigId);
         const now = Date.now();
         const alertChanged = isAlert !== lastAlertState;
         if (now - lastSaveAt >= 300000 || alertChanged) {
-            await this.sensorsRepository.updateAlertState(data.blowerConfigId, new Date(now), isAlert);
-            return this.sensorsRepository.createReading({
+            await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+            this.readingBuffer.push({
                 tenant: { connect: { id: data.tenantId } },
                 blowerConfig: { connect: { id: data.blowerConfigId } },
                 psi: data.psi,
                 isAlert: isAlert,
             });
+            if (this.readingBuffer.length >= BUFFER_FLUSH_SIZE) {
+                await this.flushReadingBuffer();
+            }
+            return { psi: data.psi, isAlert };
         }
         return null;
+    }
+    async flushReadingBuffer() {
+        if (this.readingBuffer.length === 0)
+            return;
+        const batch = this.readingBuffer.splice(0);
+        try {
+            await this.sensorsRepository.createManyReadings(batch.map((r) => ({
+                tenantId: r.tenant.connect.id,
+                blowerConfigId: r.blowerConfig.connect.id,
+                psi: r.psi,
+                isAlert: r.isAlert,
+            })));
+            this.logger.debug(`Flushed ${batch.length} pressure readings to DB`);
+        }
+        catch (e) {
+            this.logger.error(`Failed to flush ${batch.length} readings: ${e}`);
+            this.readingBuffer.unshift(...batch);
+        }
     }
     async getLatestThreshold(tenantId, blowerId) {
         if (blowerId) {

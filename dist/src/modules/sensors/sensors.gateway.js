@@ -43,6 +43,7 @@ function getClientInfo(client) {
     }
     return undefined;
 }
+const DEVICE_REVALIDATION_INTERVAL_MS = 5 * 60 * 1000;
 let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     sensorsService;
     iotService;
@@ -51,6 +52,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     server;
     connectedClients = new Map();
     heartbeatTimers = new Map();
+    revalidationTimers = new Map();
     ensureClientInfo(client) {
         let info = this.connectedClients.get(client);
         if (!info) {
@@ -111,6 +113,33 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             this.heartbeatTimers.delete(client);
         }
     }
+    startDeviceRevalidation(client) {
+        const device = client.device;
+        if (!device?.deviceKey)
+            return;
+        const timer = setInterval(async () => {
+            try {
+                const valid = await this.iotService.validateDeviceKey(device.deviceKey);
+                if (!valid) {
+                    this.logger.warn(`Device key revoked mid-session, closing connection`);
+                    client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
+                    client.close(4001, 'Device key revoked');
+                    this.clearDeviceRevalidation(client);
+                }
+            }
+            catch (e) {
+                this.logger.warn(`Device revalidation error: ${e}`);
+            }
+        }, DEVICE_REVALIDATION_INTERVAL_MS);
+        this.revalidationTimers.set(client, timer);
+    }
+    clearDeviceRevalidation(client) {
+        const timer = this.revalidationTimers.get(client);
+        if (timer) {
+            clearInterval(timer);
+            this.revalidationTimers.delete(client);
+        }
+    }
     async handleConnection(client) {
         const req = client.__upgradeReq;
         if (req) {
@@ -157,6 +186,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             this.startHeartbeat(client);
         });
         this.startHeartbeat(client);
+        this.startDeviceRevalidation(client);
         const device = client.device;
         const user = client.user;
         if (device) {
@@ -190,6 +220,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     }
     handleDisconnect(client) {
         this.clearHeartbeat(client);
+        this.clearDeviceRevalidation(client);
         const info = this.connectedClients.get(client);
         if (info?.blowerId) {
             this.broadcastToUsers(info.tenantId, {
@@ -199,23 +230,8 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
         this.connectedClients.delete(client);
     }
-    async isDeviceActive(client) {
-        const device = client.device;
-        if (!device?.deviceKey)
-            return true;
-        const valid = await this.iotService.validateDeviceKey(device.deviceKey);
-        if (!valid) {
-            this.logger.warn(`Device key revoked mid-session, closing connection`);
-            client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
-            client.close(4001, 'Device key revoked');
-            return false;
-        }
-        return true;
-    }
     async handleRegisterBlower(data, client) {
         try {
-            if (!(await this.isDeviceActive(client)))
-                return;
             const clientInfo = this.ensureClientInfo(client);
             const tenantId = data.tenantId || clientInfo?.tenantId;
             const blowerId = data.blowerId || clientInfo?.blowerId;
@@ -241,8 +257,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     }
     async handlePressureReading(data, client) {
         try {
-            if (!(await this.isDeviceActive(client)))
-                return;
             const clientInfo = this.ensureClientInfo(client);
             const enriched = {
                 psi: data.psi ?? 0,
@@ -283,8 +297,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
     }
     async handleSetNewThreshold(data, client) {
-        if (!(await this.isDeviceActive(client)))
-            return;
         const clientInfo = this.ensureClientInfo(client);
         const blowerId = data.blowerId || clientInfo?.blowerId;
         const tenantId = clientInfo?.tenantId;
@@ -303,8 +315,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         return { status: 'success', threshold: data.threshold, blowerId };
     }
     async handleGetThreshold(data, client) {
-        if (!(await this.isDeviceActive(client)))
-            return;
         const clientInfo = this.ensureClientInfo(client);
         const tenantId = clientInfo?.tenantId;
         const blowerId = data?.blowerId || clientInfo?.blowerId;
@@ -337,8 +347,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
     }
     async handleDeviceInfo(data, client) {
-        if (!(await this.isDeviceActive(client)))
-            return;
         const clientInfo = this.ensureClientInfo(client);
         if (!clientInfo?.blowerConfigId)
             return;
@@ -358,8 +366,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
     }
     async handleSetDeviceConfig(data, client) {
-        if (!(await this.isDeviceActive(client)))
-            return;
         const clientInfo = this.ensureClientInfo(client);
         const blowerId = data.blowerId || clientInfo?.blowerId;
         const tenantId = clientInfo?.tenantId;

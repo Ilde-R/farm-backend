@@ -173,4 +173,10 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
+    createManyReadings(data: {
+        tenantId: string;
+        blowerConfigId: string;
+        psi: number;
+        isAlert: boolean;
+    }[]): Promise<import("@prisma/client").Prisma.BatchPayload | undefined>;
 }

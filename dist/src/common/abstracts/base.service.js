@@ -21,12 +21,26 @@ class BaseService {
         return record;
     }
     async update(id, updateDto) {
-        await this.findOne(id);
-        return this.userRepository.update(id, updateDto);
+        try {
+            return await this.userRepository.update(id, updateDto);
+        }
+        catch (error) {
+            if (error?.code === 'P2025') {
+                throw new common_1.NotFoundException();
+            }
+            throw error;
+        }
     }
     async remove(id) {
-        await this.findOne(id);
-        return this.userRepository.remove(id);
+        try {
+            return await this.userRepository.remove(id);
+        }
+        catch (error) {
+            if (error?.code === 'P2025') {
+                throw new common_1.NotFoundException();
+            }
+            throw error;
+        }
     }
 }
 exports.BaseService = BaseService;
