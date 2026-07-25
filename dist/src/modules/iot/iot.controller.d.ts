@@ -36,4 +36,7 @@ export declare class IotController {
         blowerConfigId: string;
         key: string;
     }>;
+    deleteBlower(blowerId: string, req: RequestWithUser): Promise<{
+        message: string;
+    }>;
 }

@@ -79,4 +79,22 @@ export class IotService {
 
     return this.iotRepository.updateKeyActive(key, false);
   }
+
+  async deleteBlower(tenantId: string, blowerId: string) {
+    const blower = await this.iotRepository.findBlowerConfig(
+      tenantId,
+      blowerId,
+    );
+
+    if (!blower) {
+      throw new NotFoundException(`Blower ${blowerId} no encontrado`);
+    }
+
+    if (blower.tenantId !== tenantId) {
+      throw new ForbiddenException(`Blower no pertenece a este tenant`);
+    }
+
+    await this.iotRepository.deleteBlowerConfig(blower.id);
+    return { message: `Blower ${blowerId} eliminado correctamente` };
+  }
 }

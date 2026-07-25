@@ -31,6 +31,9 @@ let IotController = class IotController {
     async revokeDevice(key, req) {
         return this.iotService.revokeDeviceKey(key, req.user.tenantId);
     }
+    async deleteBlower(blowerId, req) {
+        return this.iotService.deleteBlower(req.user.tenantId, blowerId);
+    }
 };
 exports.IotController = IotController;
 __decorate([
@@ -61,6 +64,15 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], IotController.prototype, "revokeDevice", null);
+__decorate([
+    (0, common_1.Delete)('blowers/:blowerId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Eliminar un blower y keys' }),
+    __param(0, (0, common_1.Param)('blowerId')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], IotController.prototype, "deleteBlower", null);
 exports.IotController = IotController = __decorate([
     (0, swagger_1.ApiTags)('Iot'),
     (0, swagger_1.ApiBearerAuth)(),

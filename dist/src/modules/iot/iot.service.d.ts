@@ -43,4 +43,7 @@ export declare class IotService {
         blowerConfigId: string;
         key: string;
     }>;
+    deleteBlower(tenantId: string, blowerId: string): Promise<{
+        message: string;
+    }>;
 }

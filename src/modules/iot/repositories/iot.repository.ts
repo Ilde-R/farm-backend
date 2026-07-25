@@ -84,4 +84,21 @@ export class IotRepository {
       data: { isActive },
     });
   }
+
+  async findBlowerConfig(tenantId: string, blowerId: string) {
+    return this.prisma.blowerConfig.findUnique({
+      where: { tenantId_blowerId: { tenantId, blowerId } },
+    });
+  }
+
+  async deleteBlowerConfig(blowerConfigId: string) {
+    await this.prisma.deviceKey.deleteMany({
+      where: { blowerConfigId },
+    });
+    return this.prisma.blowerConfig.delete({
+      where: {
+        id: blowerConfigId,
+      },
+    });
+  }
 }
