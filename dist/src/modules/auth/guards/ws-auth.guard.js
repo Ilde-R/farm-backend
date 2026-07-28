@@ -28,7 +28,7 @@ let WsAuthGuard = WsAuthGuard_1 = class WsAuthGuard {
         const req = (client.__upgradeReq ||
             client.upgradeReq);
         if (!req) {
-            throw new websockets_1.WsException('No upgrade request available');
+            throw new websockets_1.WsException('No hay solicitud de upgrade disponible');
         }
         const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
         const token = url.searchParams.get('token');

@@ -23,7 +23,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const exist = await this.authRepository.findForLogin(registerDto.email);
 
-    if (exist) throw new ConflictException('Email already exists');
+    if (exist) throw new ConflictException('El email ya está registrado');
 
     const salt = await bcrypt.genSalt();
     const { password, ...userData } = registerDto;
@@ -107,7 +107,7 @@ export class AuthService {
       !session.isActive ||
       (session.expiresAt && session.expiresAt < new Date())
     ) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('Token de refresco inválido');
     }
 
     await this.authRepository.invalidateSession(refreshToken.refreshToken);
@@ -115,7 +115,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: session.userId },
     });
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
 
     let tenantId = user.tenantId;
     if (!tenantId) {
@@ -150,6 +150,6 @@ export class AuthService {
 
   async logout(userId: string) {
     await this.authRepository.invalidateAllUserSessions(userId);
-    return { message: 'Logged out successfully' };
+    return { message: 'Sesión cerrada correctamente' };
   }
 }

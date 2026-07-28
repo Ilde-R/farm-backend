@@ -236,7 +236,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             const tenantId = data.tenantId || clientInfo?.tenantId;
             const blowerId = data.blowerId || clientInfo?.blowerId;
             if (!tenantId || !blowerId) {
-                return { status: 'error', message: 'tenantId and blowerId required' };
+                return { status: 'error', message: 'tenantId y blowerId requeridos' };
             }
             const config = await this.sensorsService.registerBlower(tenantId, blowerId);
             if (clientInfo) {
@@ -301,7 +301,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         const blowerId = data.blowerId || clientInfo?.blowerId;
         const tenantId = clientInfo?.tenantId;
         if (!blowerId || !tenantId) {
-            return { status: 'error', message: 'blowerId required' };
+            return { status: 'error', message: 'blowerId requerido' };
         }
         await this.sensorsService.updateThreshold(tenantId, blowerId, data.threshold);
         for (const [c, info] of this.connectedClients) {
@@ -319,7 +319,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         const tenantId = clientInfo?.tenantId;
         const blowerId = data?.blowerId || clientInfo?.blowerId;
         if (!tenantId) {
-            return { status: 'error', message: 'tenantId required' };
+            return { status: 'error', message: 'tenantId requerido' };
         }
         if (blowerId) {
             const threshold = await this.sensorsService.getLatestThreshold(tenantId, blowerId);
@@ -370,27 +370,27 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         const blowerId = data.blowerId || clientInfo?.blowerId;
         const tenantId = clientInfo?.tenantId;
         if (!blowerId || !tenantId) {
-            return { status: 'error', message: 'blowerId required' };
+            return { status: 'error', message: 'blowerId requerido' };
         }
         const config = await this.sensorsService.getBlowerConfigByTenantAndId(tenantId, blowerId);
         if (!config) {
-            return { status: 'error', message: 'BlowerConfig not found' };
+            return { status: 'error', message: 'Configuración del blower no encontrada' };
         }
         const update = {};
         if (data.readIntervalMs !== undefined) {
             if (data.readIntervalMs < 500 || data.readIntervalMs > 60000) {
-                return { status: 'error', message: 'readIntervalMs must be 500-60000' };
+                return { status: 'error', message: 'readIntervalMs debe ser 500-60000' };
             }
             update.readIntervalMs = data.readIntervalMs;
         }
         if (data.scaleFactor !== undefined) {
             if (data.scaleFactor <= 0) {
-                return { status: 'error', message: 'scaleFactor must be > 0' };
+                return { status: 'error', message: 'scaleFactor debe ser > 0' };
             }
             update.scaleFactor = data.scaleFactor;
         }
         if (Object.keys(update).length === 0) {
-            return { status: 'error', message: 'No valid fields to update' };
+            return { status: 'error', message: 'No hay campos válidos para actualizar' };
         }
         await this.sensorsService.updateDeviceConfig(config.id, update);
         for (const [c, info] of this.connectedClients) {
