@@ -7,6 +7,7 @@ import { PressureReading } from '@prisma/client';
 interface AlertCacheEntry {
   lastSaveAt: number;
   lastAlertState: boolean;
+  saveIntervalSeconds: number;
   cachedAt: number;
 }
 
@@ -15,7 +16,14 @@ const BUFFER_FLUSH_INTERVAL_MS = 10 * 1000;
 const BUFFER_FLUSH_SIZE = 100;
 
 @Injectable()
-export class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> implements OnModuleDestroy {
+export class SensorsService
+  extends BaseService<
+    PressureReading,
+    CreateSensorDto,
+    Partial<PressureReading>
+  >
+  implements OnModuleDestroy
+{
   private readonly logger = new Logger(SensorsService.name);
 
   private alertCache = new Map<string, AlertCacheEntry>();
@@ -54,12 +62,20 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
    * Gets alert state from cache, falling back to DB on miss.
    * Eliminates 1 DB query per pressure reading when cached.
    */
-  private async getCachedAlertState(blowerConfigId: string): Promise<{ lastSaveAt: number; lastAlertState: boolean }> {
+  private async getCachedAlertState(blowerConfigId: string): Promise<{
+    lastSaveAt: number;
+    lastAlertState: boolean;
+    saveIntervalSeconds: number;
+  }> {
     const cached = this.alertCache.get(blowerConfigId);
     const now = Date.now();
 
-    if (cached && (now - cached.cachedAt) < ALERT_CACHE_TTL_MS) {
-      return { lastSaveAt: cached.lastSaveAt, lastAlertState: cached.lastAlertState };
+    if (cached && now - cached.cachedAt < ALERT_CACHE_TTL_MS) {
+      return {
+        lastSaveAt: cached.lastSaveAt,
+        lastAlertState: cached.lastAlertState,
+        saveIntervalSeconds: cached.saveIntervalSeconds,
+      };
     }
 
     // Cache miss — fetch from DB
@@ -67,6 +83,7 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
     this.alertCache.set(blowerConfigId, {
       lastSaveAt: state.lastSaveAt,
       lastAlertState: state.lastAlertState,
+      saveIntervalSeconds: state.saveIntervalSeconds,
       cachedAt: now,
     });
     return state;
@@ -79,12 +96,20 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
     blowerConfigId: string,
     lastSaveAt: Date,
     isAlert: boolean,
+    saveIntervalSeconds?: number,
   ) {
-    await this.sensorsRepository.updateAlertState(blowerConfigId, lastSaveAt, isAlert);
+    await this.sensorsRepository.updateAlertState(
+      blowerConfigId,
+      lastSaveAt,
+      isAlert,
+    );
     // Update cache immediately
+    const existing = this.alertCache.get(blowerConfigId);
     this.alertCache.set(blowerConfigId, {
       lastSaveAt: lastSaveAt.getTime(),
       lastAlertState: isAlert,
+      saveIntervalSeconds:
+        saveIntervalSeconds ?? existing?.saveIntervalSeconds ?? 300,
       cachedAt: Date.now(),
     });
   }
@@ -106,13 +131,19 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
     }
 
     // Use cached alert state instead of DB query every time
-    const { lastSaveAt, lastAlertState } = await this.getCachedAlertState(data.blowerConfigId);
+    const { lastSaveAt, lastAlertState, saveIntervalSeconds } =
+      await this.getCachedAlertState(data.blowerConfigId);
 
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
+    const saveIntervalMs = saveIntervalSeconds * 1000;
 
-    if (now - lastSaveAt >= 300000 || alertChanged) {
-      await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+    if (now - lastSaveAt >= saveIntervalMs || alertChanged) {
+      await this.updateCachedAlertState(
+        data.blowerConfigId,
+        new Date(now),
+        isAlert,
+      );
 
       // Buffer the write instead of immediate DB insert
       this.readingBuffer.push({

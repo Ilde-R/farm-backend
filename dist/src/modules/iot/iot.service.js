@@ -65,6 +65,18 @@ let IotService = class IotService {
         }
         return this.iotRepository.updateKeyActive(key, false);
     }
+    async updateBlowerConfig(tenantId, blowerId, dto) {
+        const blower = await this.iotRepository.findBlowerConfig(tenantId, blowerId);
+        if (!blower) {
+            throw new common_1.NotFoundException(`Blower ${blowerId} no encontrado`);
+        }
+        if (blower.tenantId !== tenantId) {
+            throw new common_1.ForbiddenException(`Blower no pertenece a este tenant`);
+        }
+        return this.iotRepository.updateBlowerConfig(blower.id, {
+            saveIntervalSeconds: dto.saveIntervalSeconds,
+        });
+    }
     async deleteBlower(tenantId, blowerId) {
         const blower = await this.iotRepository.findBlowerConfig(tenantId, blowerId);
         if (!blower) {

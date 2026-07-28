@@ -114,11 +114,13 @@ export class SensorsRepository extends BaseRepository<
       select: {
         lastSaveAt: true,
         lastAlertState: true,
+        saveIntervalSeconds: true,
       },
     });
     return {
       lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
       lastAlertState: config?.lastAlertState ?? false,
+      saveIntervalSeconds: config?.saveIntervalSeconds ?? 300,
     };
   }
 
@@ -132,7 +134,7 @@ export class SensorsRepository extends BaseRepository<
       data: { lastSaveAt, lastAlertState },
     });
   }
-  
+
   async createManyReadings(
     data: {
       tenantId: string;

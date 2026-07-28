@@ -1,12 +1,12 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProvisionDto } from './dto/provision.dto';
+import { UpdateBlowerConfigDto } from './dto/update-blower-config.dto';
 import { randomBytes } from 'crypto';
 import { IotRepository } from './repositories/iot.repository';
 
@@ -78,6 +78,29 @@ export class IotService {
     }
 
     return this.iotRepository.updateKeyActive(key, false);
+  }
+
+  async updateBlowerConfig(
+    tenantId: string,
+    blowerId: string,
+    dto: UpdateBlowerConfigDto,
+  ) {
+    const blower = await this.iotRepository.findBlowerConfig(
+      tenantId,
+      blowerId,
+    );
+
+    if (!blower) {
+      throw new NotFoundException(`Blower ${blowerId} no encontrado`);
+    }
+
+    if (blower.tenantId !== tenantId) {
+      throw new ForbiddenException(`Blower no pertenece a este tenant`);
+    }
+
+    return this.iotRepository.updateBlowerConfig(blower.id, {
+      saveIntervalSeconds: dto.saveIntervalSeconds,
+    });
   }
 
   async deleteBlower(tenantId: string, blowerId: string) {

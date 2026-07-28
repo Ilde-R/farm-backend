@@ -91,6 +91,16 @@ export class IotRepository {
     });
   }
 
+  async updateBlowerConfig(
+    blowerConfigId: string,
+    data: { saveIntervalSeconds?: number },
+  ) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data,
+    });
+  }
+
   async deleteBlowerConfig(blowerConfigId: string) {
     await this.prisma.deviceKey.deleteMany({
       where: { blowerConfigId },

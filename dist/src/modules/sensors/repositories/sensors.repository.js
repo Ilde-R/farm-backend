@@ -87,11 +87,13 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
             select: {
                 lastSaveAt: true,
                 lastAlertState: true,
+                saveIntervalSeconds: true,
             },
         });
         return {
             lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
             lastAlertState: config?.lastAlertState ?? false,
+            saveIntervalSeconds: config?.saveIntervalSeconds ?? 300,
         };
     }
     async updateAlertState(blowerConfigId, lastSaveAt, lastAlertState) {

@@ -17,6 +17,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -32,6 +33,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -47,6 +49,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
@@ -62,6 +65,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
@@ -77,6 +81,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }[]>;
@@ -97,6 +102,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -115,6 +121,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -130,6 +137,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
@@ -157,6 +165,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
     getAlertState(blowerConfigId: string): Promise<{
         lastSaveAt: number;
         lastAlertState: boolean;
+        saveIntervalSeconds: number;
     }>;
     updateAlertState(blowerConfigId: string, lastSaveAt: Date, lastAlertState: boolean): Promise<{
         id: string;
@@ -170,6 +179,7 @@ export declare class SensorsRepository extends BaseRepository<PressureReading, C
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;

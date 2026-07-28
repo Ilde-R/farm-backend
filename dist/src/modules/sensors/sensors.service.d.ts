@@ -23,6 +23,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -46,6 +47,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
@@ -70,6 +72,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -88,6 +91,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;
@@ -103,6 +107,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
@@ -118,6 +123,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;

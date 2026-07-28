@@ -83,6 +83,7 @@ model BlowerConfig {
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
   scaleFactor     Float?  @default(25000.0)
+  saveIntervalSeconds Int @default(300)
   lastSaveAt DateTime?
   lastAlertState Boolean @default(false)
 

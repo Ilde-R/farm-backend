@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const iot_service_1 = require("./iot.service");
 const provision_dto_1 = require("./dto/provision.dto");
+const update_blower_config_dto_1 = require("./dto/update-blower-config.dto");
 let IotController = class IotController {
     iotService;
     constructor(iotService) {
@@ -30,6 +31,9 @@ let IotController = class IotController {
     }
     async revokeDevice(key, req) {
         return this.iotService.revokeDeviceKey(key, req.user.tenantId);
+    }
+    async updateBlowerConfig(blowerId, dto, req) {
+        return this.iotService.updateBlowerConfig(req.user.tenantId, blowerId, dto);
     }
     async deleteBlower(blowerId, req) {
         return this.iotService.deleteBlower(req.user.tenantId, blowerId);
@@ -64,6 +68,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], IotController.prototype, "revokeDevice", null);
+__decorate([
+    (0, common_1.Patch)('blowers/:blowerId/config'),
+    (0, swagger_1.ApiOperation)({ summary: 'Configurar intervalo de guardado de un blower' }),
+    __param(0, (0, common_1.Param)('blowerId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_blower_config_dto_1.UpdateBlowerConfigDto, Object]),
+    __metadata("design:returntype", Promise)
+], IotController.prototype, "updateBlowerConfig", null);
 __decorate([
     (0, common_1.Delete)('blowers/:blowerId'),
     (0, swagger_1.ApiOperation)({ summary: 'Eliminar un blower y keys' }),
