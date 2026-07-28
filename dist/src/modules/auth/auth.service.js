@@ -84,11 +84,13 @@ let AuthService = class AuthService {
     }
     async login(loginDto) {
         const user = await this.authRepository.findForLogin(loginDto.email);
-        if (!user || !user.credential)
-            throw new common_1.UnauthorizedException('Credentials not valid');
+        if (!user)
+            throw new common_1.UnauthorizedException('Usuario no registrado');
+        if (!user.credential)
+            throw new common_1.UnauthorizedException('Credenciales no válidas');
         const valid = await bcrypt.compare(loginDto.password, user.credential.password);
         if (!valid)
-            throw new common_1.UnauthorizedException('Credentials not valid');
+            throw new common_1.UnauthorizedException('Contraseña incorrecta');
         let tenantId = user.tenantId;
         if (!tenantId) {
             const tenant = await this.prisma.tenant.create({

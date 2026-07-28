@@ -55,14 +55,15 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.authRepository.findForLogin(loginDto.email);
-    if (!user || !user.credential)
-      throw new UnauthorizedException('Credentials not valid');
+    if (!user) throw new UnauthorizedException('Usuario no registrado');
+    if (!user.credential)
+      throw new UnauthorizedException('Credenciales no válidas');
 
     const valid = await bcrypt.compare(
       loginDto.password,
       user.credential.password,
     );
-    if (!valid) throw new UnauthorizedException('Credentials not valid');
+    if (!valid) throw new UnauthorizedException('Contraseña incorrecta');
 
     let tenantId = user.tenantId;
     if (!tenantId) {
