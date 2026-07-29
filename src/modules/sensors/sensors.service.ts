@@ -7,7 +7,6 @@ import { PressureReading } from '@prisma/client';
 interface AlertCacheEntry {
   lastSaveAt: number;
   lastAlertState: boolean;
-  saveIntervalSeconds: number;
   cachedAt: number;
 }
 
@@ -65,7 +64,6 @@ export class SensorsService
   private async getCachedAlertState(blowerConfigId: string): Promise<{
     lastSaveAt: number;
     lastAlertState: boolean;
-    saveIntervalSeconds: number;
   }> {
     const cached = this.alertCache.get(blowerConfigId);
     const now = Date.now();
@@ -74,7 +72,6 @@ export class SensorsService
       return {
         lastSaveAt: cached.lastSaveAt,
         lastAlertState: cached.lastAlertState,
-        saveIntervalSeconds: cached.saveIntervalSeconds,
       };
     }
 
@@ -83,10 +80,9 @@ export class SensorsService
     this.alertCache.set(blowerConfigId, {
       lastSaveAt: state.lastSaveAt,
       lastAlertState: state.lastAlertState,
-      saveIntervalSeconds: state.saveIntervalSeconds,
       cachedAt: now,
     });
-    return state;
+    return { lastSaveAt: state.lastSaveAt, lastAlertState: state.lastAlertState };
   }
 
   /**
@@ -96,7 +92,6 @@ export class SensorsService
     blowerConfigId: string,
     lastSaveAt: Date,
     isAlert: boolean,
-    saveIntervalSeconds?: number,
   ) {
     await this.sensorsRepository.updateAlertState(
       blowerConfigId,
@@ -104,12 +99,9 @@ export class SensorsService
       isAlert,
     );
     // Update cache immediately
-    const existing = this.alertCache.get(blowerConfigId);
     this.alertCache.set(blowerConfigId, {
       lastSaveAt: lastSaveAt.getTime(),
       lastAlertState: isAlert,
-      saveIntervalSeconds:
-        saveIntervalSeconds ?? existing?.saveIntervalSeconds ?? 300,
       cachedAt: Date.now(),
     });
   }
@@ -131,12 +123,17 @@ export class SensorsService
     }
 
     // Use cached alert state instead of DB query every time
-    const { lastSaveAt, lastAlertState, saveIntervalSeconds } =
+    const { lastSaveAt, lastAlertState } =
       await this.getCachedAlertState(data.blowerConfigId);
 
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
-    const saveIntervalMs = saveIntervalSeconds * 1000;
+
+    // Fetch saveIntervalSeconds fresh from DB (not cached)
+    const config = await this.sensorsRepository.getBlowerConfigById(
+      data.blowerConfigId,
+    );
+    const saveIntervalMs = (config?.saveIntervalSeconds ?? 300) * 1000;
 
     if (now - lastSaveAt >= saveIntervalMs || alertChanged) {
       await this.updateCachedAlertState(

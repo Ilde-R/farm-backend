@@ -46,25 +46,21 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
             return {
                 lastSaveAt: cached.lastSaveAt,
                 lastAlertState: cached.lastAlertState,
-                saveIntervalSeconds: cached.saveIntervalSeconds,
             };
         }
         const state = await this.sensorsRepository.getAlertState(blowerConfigId);
         this.alertCache.set(blowerConfigId, {
             lastSaveAt: state.lastSaveAt,
             lastAlertState: state.lastAlertState,
-            saveIntervalSeconds: state.saveIntervalSeconds,
             cachedAt: now,
         });
-        return state;
+        return { lastSaveAt: state.lastSaveAt, lastAlertState: state.lastAlertState };
     }
-    async updateCachedAlertState(blowerConfigId, lastSaveAt, isAlert, saveIntervalSeconds) {
+    async updateCachedAlertState(blowerConfigId, lastSaveAt, isAlert) {
         await this.sensorsRepository.updateAlertState(blowerConfigId, lastSaveAt, isAlert);
-        const existing = this.alertCache.get(blowerConfigId);
         this.alertCache.set(blowerConfigId, {
             lastSaveAt: lastSaveAt.getTime(),
             lastAlertState: isAlert,
-            saveIntervalSeconds: saveIntervalSeconds ?? existing?.saveIntervalSeconds ?? 300,
             cachedAt: Date.now(),
         });
     }
@@ -78,10 +74,11 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         if (data.currentThreshold !== undefined) {
             await this.sensorsRepository.updateBlowerThreshold(data.blowerConfigId, data.currentThreshold);
         }
-        const { lastSaveAt, lastAlertState, saveIntervalSeconds } = await this.getCachedAlertState(data.blowerConfigId);
+        const { lastSaveAt, lastAlertState } = await this.getCachedAlertState(data.blowerConfigId);
         const now = Date.now();
         const alertChanged = isAlert !== lastAlertState;
-        const saveIntervalMs = saveIntervalSeconds * 1000;
+        const config = await this.sensorsRepository.getBlowerConfigById(data.blowerConfigId);
+        const saveIntervalMs = (config?.saveIntervalSeconds ?? 300) * 1000;
         if (now - lastSaveAt >= saveIntervalMs || alertChanged) {
             await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
             this.readingBuffer.push({

@@ -12,8 +12,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     constructor(sensorsRepository: SensorsRepository);
     onModuleDestroy(): void;
     registerBlower(tenantId: string, blowerId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -36,8 +36,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     private flushReadingBuffer;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -61,8 +61,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         uptimeMs?: number;
         freeHeap?: number;
     }): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -80,8 +80,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -96,8 +96,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     }>;
     getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -112,8 +112,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     } | null>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
