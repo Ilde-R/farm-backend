@@ -79,18 +79,35 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         const alertChanged = isAlert !== lastAlertState;
         const config = await this.sensorsRepository.getBlowerConfigById(data.blowerConfigId);
         const saveIntervalMs = (config?.saveIntervalSeconds ?? 300) * 1000;
-        if (now - lastSaveAt >= saveIntervalMs || alertChanged) {
+        if (alertChanged) {
+            await this.flushReadingBuffer();
+            await this.sensorsRepository.createReading({
+                tenant: { connect: { id: data.tenantId } },
+                blowerConfig: { connect: { id: data.blowerConfigId } },
+                psi: data.psi,
+                isAlert,
+                deviceTs: data.deviceTs,
+                deviceTime: data.deviceTime,
+                source: 'alert',
+            });
+            await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+            return { psi: data.psi, isAlert, source: 'alert' };
+        }
+        if (now - lastSaveAt >= saveIntervalMs) {
             await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
             this.readingBuffer.push({
                 tenant: { connect: { id: data.tenantId } },
                 blowerConfig: { connect: { id: data.blowerConfigId } },
                 psi: data.psi,
-                isAlert: isAlert,
+                isAlert,
+                deviceTs: data.deviceTs,
+                deviceTime: data.deviceTime,
+                source: 'scheduled',
             });
             if (this.readingBuffer.length >= BUFFER_FLUSH_SIZE) {
                 await this.flushReadingBuffer();
             }
-            return { psi: data.psi, isAlert };
+            return { psi: data.psi, isAlert, source: 'scheduled' };
         }
         return null;
     }
@@ -104,6 +121,9 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
                 blowerConfigId: r.blowerConfig.connect.id,
                 psi: r.psi,
                 isAlert: r.isAlert,
+                deviceTs: r.deviceTs,
+                deviceTime: r.deviceTime,
+                source: r.source,
             })));
             this.logger.debug(`Flushed ${batch.length} pressure readings to DB`);
         }

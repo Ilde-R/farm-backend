@@ -4,17 +4,19 @@ import { Server } from 'ws';
 import WebSocket from 'ws';
 import { IotService } from '../iot/iot.service';
 import { JwtService } from '@nestjs/jwt';
+import { DeviceTimeService } from './services/device-time.service';
 export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     private readonly sensorsService;
     private readonly iotService;
     private readonly jwtService;
+    private readonly deviceTimeService;
     private readonly logger;
     server: Server;
     private connectedClients;
     private heartbeatTimers;
     private revalidationTimers;
     private ensureClientInfo;
-    constructor(sensorsService: SensorsService, iotService: IotService, jwtService: JwtService);
+    constructor(sensorsService: SensorsService, iotService: IotService, jwtService: JwtService, deviceTimeService: DeviceTimeService);
     private broadcastToUsers;
     private getOnlineDevices;
     afterInit(server: Server): void;
@@ -36,9 +38,16 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
         blowerId?: string;
         blowerConfigId?: string;
         tenantId?: string;
+        ts?: number;
     }, client: WebSocket): Promise<{
         ok: boolean;
     } | undefined>;
+    handleBatchReadings(data: {
+        readings: {
+            psi: number;
+            ts?: number;
+        }[];
+    }, client: WebSocket): Promise<void>;
     handleSetNewThreshold(data: {
         blowerId?: string;
         threshold: number;

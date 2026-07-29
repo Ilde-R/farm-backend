@@ -28,6 +28,7 @@ const ws_2 = __importDefault(require("ws"));
 const ws_auth_guard_1 = require("../auth/guards/ws-auth.guard");
 const iot_service_1 = require("../iot/iot.service");
 const jwt_1 = require("@nestjs/jwt");
+const device_time_service_1 = require("./services/device-time.service");
 function getClientInfo(client) {
     const device = client.device;
     if (device) {
@@ -48,6 +49,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     sensorsService;
     iotService;
     jwtService;
+    deviceTimeService;
     logger = new common_1.Logger(SensorsGateway_1.name);
     server;
     connectedClients = new Map();
@@ -63,10 +65,11 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
         return info;
     }
-    constructor(sensorsService, iotService, jwtService) {
+    constructor(sensorsService, iotService, jwtService, deviceTimeService) {
         this.sensorsService = sensorsService;
         this.iotService = iotService;
         this.jwtService = jwtService;
+        this.deviceTimeService = deviceTimeService;
     }
     broadcastToUsers(tenantId, message, exclude) {
         for (const [c, info] of this.connectedClients) {
@@ -263,6 +266,10 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
                 blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
                 tenantId: data.tenantId || clientInfo?.tenantId,
                 blowerId: data.blowerId || clientInfo?.blowerId,
+                deviceTs: data.ts,
+                deviceTime: data.ts !== undefined && clientInfo?.blowerConfigId
+                    ? this.deviceTimeService.toRealTime(clientInfo.blowerConfigId, data.ts)
+                    : undefined,
             };
             const dto = (0, class_transformer_1.plainToInstance)(create_sensor_dto_1.CreateSensorDto, enriched);
             const errors = await (0, class_validator_1.validate)(dto);
@@ -294,6 +301,51 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         }
         catch (error) {
             this.logger.error(`Pressure reading error: ${error instanceof Error ? error.message : 'Unknown'}`);
+        }
+    }
+    async handleBatchReadings(data, client) {
+        try {
+            const clientInfo = this.ensureClientInfo(client);
+            if (!clientInfo?.blowerConfigId || !clientInfo?.tenantId)
+                return;
+            const last = data.readings[data.readings.length - 1];
+            if (last) {
+                await this.sensorsService.createReading({
+                    psi: last.psi,
+                    blowerId: clientInfo.blowerId,
+                    blowerConfigId: clientInfo.blowerConfigId,
+                    tenantId: clientInfo.tenantId,
+                    deviceTs: last.ts,
+                    deviceTime: last.ts !== undefined
+                        ? this.deviceTimeService.toRealTime(clientInfo.blowerConfigId, last.ts)
+                        : undefined,
+                });
+                for (const [c, info] of this.connectedClients) {
+                    if (c.readyState === ws_2.default.OPEN &&
+                        info.tenantId === clientInfo.tenantId &&
+                        !info.blowerId) {
+                        c.send(JSON.stringify({
+                            event: 'pressure_reading',
+                            data: {
+                                psi: last.psi,
+                                blowerId: clientInfo.blowerId,
+                                blowerConfigId: clientInfo.blowerConfigId,
+                                tenantId: clientInfo.tenantId,
+                                deviceTs: last.ts,
+                            },
+                        }));
+                    }
+                }
+            }
+            if (client.readyState === ws_2.default.OPEN) {
+                client.send(JSON.stringify({
+                    event: 'batch_ack',
+                    data: { ok: true, count: data.readings.length, ts: Date.now() },
+                }));
+            }
+        }
+        catch (error) {
+            this.logger.error(`Batch readings error: ${error instanceof Error ? error.message : 'Unknown'}`);
         }
     }
     async handleSetNewThreshold(data, client) {
@@ -357,6 +409,9 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
                 uptimeMs: data.uptime,
                 freeHeap: data.heap,
             });
+            if (data.uptime !== undefined) {
+                this.deviceTimeService.registrarDeviceInfo(clientInfo.blowerConfigId, data.uptime * 1000);
+            }
             if (client.readyState === ws_2.default.OPEN) {
                 client.send(JSON.stringify({ event: 'device_info_ack', data: { ok: true } }));
             }
@@ -427,6 +482,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SensorsGateway.prototype, "handlePressureReading", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('batch_readings'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, ws_2.default]),
+    __metadata("design:returntype", Promise)
+], SensorsGateway.prototype, "handleBatchReadings", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('set_new_threshold'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -471,6 +534,7 @@ exports.SensorsGateway = SensorsGateway = SensorsGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)(),
     __metadata("design:paramtypes", [sensors_service_1.SensorsService,
         iot_service_1.IotService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        device_time_service_1.DeviceTimeService])
 ], SensorsGateway);
 //# sourceMappingURL=sensors.gateway.js.map

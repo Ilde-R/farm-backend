@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const sensors_service_1 = require("./sensors.service");
 const sensors_gateway_1 = require("./sensors.gateway");
 const sensors_repository_1 = require("./repositories/sensors.repository");
+const device_time_service_1 = require("./services/device-time.service");
 const iot_module_1 = require("../iot/iot.module");
 let SensorsModule = class SensorsModule {
 };
@@ -18,7 +19,7 @@ exports.SensorsModule = SensorsModule;
 exports.SensorsModule = SensorsModule = __decorate([
     (0, common_1.Module)({
         imports: [iot_module_1.IotModule],
-        providers: [sensors_gateway_1.SensorsGateway, sensors_service_1.SensorsService, sensors_repository_1.SensorsRepository],
+        providers: [sensors_gateway_1.SensorsGateway, sensors_service_1.SensorsService, sensors_repository_1.SensorsRepository, device_time_service_1.DeviceTimeService],
     })
 ], SensorsModule);
 //# sourceMappingURL=sensors.module.js.map

@@ -27,18 +27,17 @@ export declare class IotController {
         id: string;
         isActive: boolean;
         createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        key: string;
     })[]>;
     revokeDevice(key: string, req: RequestWithUser): Promise<{
         id: string;
         isActive: boolean;
         createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        key: string;
     }>;
     updateBlowerConfig(blowerId: string, dto: UpdateBlowerConfigDto, req: RequestWithUser): Promise<{
-        saveIntervalSeconds: number;
         id: string;
         name: string | null;
         tenantId: string;
@@ -50,6 +49,7 @@ export declare class IotController {
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;

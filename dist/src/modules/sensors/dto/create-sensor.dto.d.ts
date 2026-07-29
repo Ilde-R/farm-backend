@@ -5,4 +5,7 @@ export declare class CreateSensorDto {
     blowerConfigId?: string;
     isAlert?: boolean;
     currentThreshold?: number;
+    deviceTs?: number;
+    deviceTime?: Date;
+    source?: string;
 }

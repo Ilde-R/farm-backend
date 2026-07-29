@@ -32,6 +32,9 @@ export class SensorsService
     blowerConfig: { connect: { id: string } };
     psi: number;
     isAlert: boolean;
+    deviceTs?: number;
+    deviceTime?: Date;
+    source: string;
   }[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -122,40 +125,55 @@ export class SensorsService
       );
     }
 
-    // Use cached alert state instead of DB query every time
     const { lastSaveAt, lastAlertState } =
       await this.getCachedAlertState(data.blowerConfigId);
 
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
 
-    // Fetch saveIntervalSeconds fresh from DB (not cached)
     const config = await this.sensorsRepository.getBlowerConfigById(
       data.blowerConfigId,
     );
     const saveIntervalMs = (config?.saveIntervalSeconds ?? 300) * 1000;
 
-    if (now - lastSaveAt >= saveIntervalMs || alertChanged) {
-      await this.updateCachedAlertState(
-        data.blowerConfigId,
-        new Date(now),
-        isAlert,
-      );
+    // Alert change — save immediately, bypass buffer
+    if (alertChanged) {
+      await this.flushReadingBuffer();
 
-      // Buffer the write instead of immediate DB insert
+      await this.sensorsRepository.createReading({
+        tenant: { connect: { id: data.tenantId } },
+        blowerConfig: { connect: { id: data.blowerConfigId } },
+        psi: data.psi,
+        isAlert,
+        deviceTs: data.deviceTs,
+        deviceTime: data.deviceTime,
+        source: 'alert',
+      });
+
+      await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+
+      return { psi: data.psi, isAlert, source: 'alert' };
+    }
+
+    // Time-based scheduled save — buffer
+    if (now - lastSaveAt >= saveIntervalMs) {
+      await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+
       this.readingBuffer.push({
         tenant: { connect: { id: data.tenantId } },
         blowerConfig: { connect: { id: data.blowerConfigId } },
         psi: data.psi,
-        isAlert: isAlert,
+        isAlert,
+        deviceTs: data.deviceTs,
+        deviceTime: data.deviceTime,
+        source: 'scheduled',
       });
 
-      // Flush if buffer is full
       if (this.readingBuffer.length >= BUFFER_FLUSH_SIZE) {
         await this.flushReadingBuffer();
       }
 
-      return { psi: data.psi, isAlert }; // Return immediately, write is buffered
+      return { psi: data.psi, isAlert, source: 'scheduled' };
     }
 
     return null;
@@ -176,6 +194,9 @@ export class SensorsService
           blowerConfigId: r.blowerConfig.connect.id,
           psi: r.psi,
           isAlert: r.isAlert,
+          deviceTs: r.deviceTs,
+          deviceTime: r.deviceTime,
+          source: r.source,
         })),
       );
       this.logger.debug(`Flushed ${batch.length} pressure readings to DB`);

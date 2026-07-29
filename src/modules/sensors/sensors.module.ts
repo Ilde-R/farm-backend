@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { SensorsService } from './sensors.service';
 import { SensorsGateway } from './sensors.gateway';
 import { SensorsRepository } from './repositories/sensors.repository';
+import { DeviceTimeService } from './services/device-time.service';
 import { IotModule } from '../iot/iot.module';
 
 @Module({
   imports: [IotModule],
-  providers: [SensorsGateway, SensorsService, SensorsRepository],
+  providers: [SensorsGateway, SensorsService, SensorsRepository, DeviceTimeService],
 })
 export class SensorsModule {}

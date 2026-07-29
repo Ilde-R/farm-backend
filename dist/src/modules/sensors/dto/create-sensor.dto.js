@@ -18,6 +18,9 @@ class CreateSensorDto {
     blowerConfigId;
     isAlert;
     currentThreshold;
+    deviceTs;
+    deviceTime;
+    source;
 }
 exports.CreateSensorDto = CreateSensorDto;
 __decorate([
@@ -49,4 +52,18 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateSensorDto.prototype, "currentThreshold", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateSensorDto.prototype, "deviceTs", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Date)
+], CreateSensorDto.prototype, "deviceTime", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSensorDto.prototype, "source", void 0);
 //# sourceMappingURL=create-sensor.dto.js.map

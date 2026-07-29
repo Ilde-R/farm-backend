@@ -77,7 +77,15 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
         });
     }
     async createReading(data) {
-        return this.prisma.pressureReading.create({ data });
+        const { deviceTs, deviceTime, source, ...rest } = data;
+        return this.prisma.pressureReading.create({
+            data: {
+                ...rest,
+                ...(deviceTs !== undefined ? { deviceTs } : {}),
+                ...(deviceTime !== undefined ? { deviceTime } : {}),
+                ...(source !== undefined ? { source } : {}),
+            },
+        });
     }
     async getAlertState(blowerConfigId) {
         const config = await this.prisma.blowerConfig.findUnique({
@@ -109,6 +117,9 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
                 blowerConfigId: r.blowerConfigId,
                 psi: r.psi,
                 isAlert: r.isAlert,
+                ...(r.deviceTs !== undefined ? { deviceTs: r.deviceTs } : {}),
+                ...(r.deviceTime !== undefined ? { deviceTime: r.deviceTime } : {}),
+                ...(r.source !== undefined ? { source: r.source } : {}),
             })),
         });
     }

@@ -19,6 +19,7 @@ import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 import { IncomingMessage } from 'http';
 import { IotService } from '../iot/iot.service';
 import { JwtService } from '@nestjs/jwt';
+import { DeviceTimeService } from './services/device-time.service';
 
 interface EnrichedClient {
   tenantId: string;
@@ -86,6 +87,7 @@ export class SensorsGateway
     private readonly sensorsService: SensorsService,
     private readonly iotService: IotService,
     private readonly jwtService: JwtService,
+    private readonly deviceTimeService: DeviceTimeService,
   ) {}
 
   private broadcastToUsers(tenantId: string, message: { event: string; data: any }, exclude?: WebSocket) {
@@ -328,6 +330,7 @@ export class SensorsGateway
       blowerId?: string;
       blowerConfigId?: string;
       tenantId?: string;
+      ts?: number;
     },
     @ConnectedSocket() client: WebSocket,
   ) {
@@ -339,6 +342,14 @@ export class SensorsGateway
         blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
         tenantId: data.tenantId || clientInfo?.tenantId,
         blowerId: data.blowerId || clientInfo?.blowerId,
+        deviceTs: data.ts,
+        deviceTime:
+          data.ts !== undefined && clientInfo?.blowerConfigId
+            ? this.deviceTimeService.toRealTime(
+                clientInfo.blowerConfigId,
+                data.ts,
+              )
+            : undefined,
       };
 
       const dto = plainToInstance(CreateSensorDto, enriched);
@@ -383,6 +394,74 @@ export class SensorsGateway
     } catch (error) {
       this.logger.error(
         `Pressure reading error: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
+  }
+
+  @SubscribeMessage('batch_readings')
+  async handleBatchReadings(
+    @MessageBody()
+    data: {
+      readings: { psi: number; ts?: number }[];
+    },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    try {
+      const clientInfo = this.ensureClientInfo(client);
+      if (!clientInfo?.blowerConfigId || !clientInfo?.tenantId) return;
+
+      // Use last reading, pass through createReading (respects saveIntervalSeconds throttle)
+      const last = data.readings[data.readings.length - 1];
+      if (last) {
+        await this.sensorsService.createReading({
+          psi: last.psi,
+          blowerId: clientInfo.blowerId,
+          blowerConfigId: clientInfo.blowerConfigId,
+          tenantId: clientInfo.tenantId,
+          deviceTs: last.ts,
+          deviceTime:
+            last.ts !== undefined
+              ? this.deviceTimeService.toRealTime(
+                  clientInfo.blowerConfigId,
+                  last.ts,
+                )
+              : undefined,
+        });
+
+        // Broadcast to user clients
+        for (const [c, info] of this.connectedClients) {
+          if (
+            c.readyState === WebSocket.OPEN &&
+            info.tenantId === clientInfo.tenantId &&
+            !info.blowerId
+          ) {
+            c.send(
+              JSON.stringify({
+                event: 'pressure_reading',
+                data: {
+                  psi: last.psi,
+                  blowerId: clientInfo.blowerId,
+                  blowerConfigId: clientInfo.blowerConfigId,
+                  tenantId: clientInfo.tenantId,
+                  deviceTs: last.ts,
+                },
+              }),
+            );
+          }
+        }
+      }
+
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            event: 'batch_ack',
+            data: { ok: true, count: data.readings.length, ts: Date.now() },
+          }),
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Batch readings error: ${error instanceof Error ? error.message : 'Unknown'}`,
       );
     }
   }
@@ -491,6 +570,14 @@ export class SensorsGateway
         uptimeMs: data.uptime,
         freeHeap: data.heap,
       });
+
+      // Register boot time offset for device timestamp conversion
+      if (data.uptime !== undefined) {
+        this.deviceTimeService.registrarDeviceInfo(
+          clientInfo.blowerConfigId,
+          data.uptime * 1000,
+        );
+      }
 
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ event: 'device_info_ack', data: { ok: true } }));

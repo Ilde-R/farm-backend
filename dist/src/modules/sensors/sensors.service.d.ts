@@ -12,8 +12,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     constructor(sensorsRepository: SensorsRepository);
     onModuleDestroy(): void;
     registerBlower(tenantId: string, blowerId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -32,12 +32,13 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     createReading(data: CreateSensorDto): Promise<{
         psi: number;
         isAlert: boolean;
+        source: string;
     } | null>;
     private flushReadingBuffer;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -61,8 +62,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         uptimeMs?: number;
         freeHeap?: number;
     }): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -80,8 +81,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -96,8 +97,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     }>;
     getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -112,8 +113,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     } | null>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        name: string | null;
         id: string;
+        name: string | null;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
