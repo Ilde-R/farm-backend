@@ -59,6 +59,7 @@ export class IotRepository {
             freeHeap: true,
             readIntervalMs: true,
             scaleFactor: true,
+            saveIntervalSeconds: true,
           },
         },
       },
