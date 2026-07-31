@@ -62,6 +62,27 @@ export class DeviceConnectionRegistry {
     }
   }
 
+  sendToDevice(blowerId: string, message: { event: string; data: any }) {
+    for (const [c, info] of this.clients) {
+      if (info.blowerId === blowerId && c.readyState === WebSocket.OPEN) {
+        try {
+          c.send(JSON.stringify(message));
+          this.logger.log(
+            `Configuración enviada al device ${blowerId} (${message.event})`,
+          );
+          return true;
+        } catch (e) {
+          this.logger.warn(`Failed to send to device ${blowerId}: ${e}`);
+          return false;
+        }
+      }
+    }
+    this.logger.warn(
+      `Device ${blowerId} no conectado; config se aplicará en la próxima conexión`,
+    );
+    return false;
+  }
+
   getOnlineDevices(tenantId: string) {
     const seen = new Set<string>();
     const devices: { blowerId: string; blowerConfigId: string }[] = [];

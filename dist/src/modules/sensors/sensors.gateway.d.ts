@@ -81,13 +81,11 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
     }, client: WebSocket): Promise<void>;
     handleSetDeviceConfig(data: {
         blowerId?: string;
-        readIntervalMs?: number;
         scaleFactor?: number;
     }, client: WebSocket): Promise<{
         status: string;
         message: string;
     } | {
-        readIntervalMs?: number;
         scaleFactor?: number;
         status: string;
         blowerId: string;

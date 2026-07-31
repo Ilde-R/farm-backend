@@ -191,12 +191,11 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             });
             try {
                 const config = await this.sensorsService.getBlowerConfigById(info.blowerConfigId);
-                if (config && (config.readIntervalMs || config.scaleFactor)) {
+                if (config && config.scaleFactor) {
                     client.send(JSON.stringify({
                         event: 'device_config_update',
                         data: {
                             blowerId: info.blowerId,
-                            readIntervalMs: config.readIntervalMs,
                             scaleFactor: config.scaleFactor,
                         },
                     }));
@@ -435,15 +434,6 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             };
         }
         const update = {};
-        if (data.readIntervalMs !== undefined) {
-            if (data.readIntervalMs < 500 || data.readIntervalMs > 60000) {
-                return {
-                    status: 'error',
-                    message: 'readIntervalMs debe ser 500-60000',
-                };
-            }
-            update.readIntervalMs = data.readIntervalMs;
-        }
         if (data.scaleFactor !== undefined) {
             if (data.scaleFactor <= 0) {
                 return { status: 'error', message: 'scaleFactor debe ser > 0' };

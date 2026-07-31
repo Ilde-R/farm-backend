@@ -67,9 +67,8 @@ let IotService = class IotService {
             throw new common_1.ForbiddenException(`La llave del dispositivo no le pertenece a este tenant`);
         }
         const result = await this.iotRepository.updateKeyActive(key, false);
-        const keyInfo = await this.iotRepository.findKeyWithTenant(key);
-        if (keyInfo?.blowerConfig?.blowerId) {
-            this.connectionRegistry.closeByBlowerId(keyInfo.blowerConfig.blowerId, 'key_revoked');
+        if (existing.blowerConfig.blowerId) {
+            this.connectionRegistry.closeByBlowerId(existing.blowerConfig.blowerId, 'key_revoked');
         }
         return result;
     }
@@ -81,9 +80,21 @@ let IotService = class IotService {
         if (blower.tenantId !== tenantId) {
             throw new common_1.ForbiddenException(`Blower no pertenece a este tenant`);
         }
-        return this.iotRepository.updateBlowerConfig(blower.id, {
-            saveIntervalSeconds: dto.saveIntervalSeconds,
-        });
+        const update = {};
+        if (dto.saveIntervalSeconds !== undefined) {
+            update.saveIntervalSeconds = dto.saveIntervalSeconds;
+        }
+        if (dto.scaleFactor !== undefined) {
+            update.scaleFactor = dto.scaleFactor;
+        }
+        const updated = await this.iotRepository.updateBlowerConfig(blower.id, update);
+        if (update.scaleFactor !== undefined) {
+            this.connectionRegistry.sendToDevice(blowerId, {
+                event: 'device_config_update',
+                data: { blowerId, scaleFactor: update.scaleFactor },
+            });
+        }
+        return updated;
     }
     async deleteBlower(tenantId, blowerId) {
         const blower = await this.iotRepository.findBlowerConfig(tenantId, blowerId);

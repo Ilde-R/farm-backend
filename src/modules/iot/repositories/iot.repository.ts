@@ -95,7 +95,7 @@ export class IotRepository {
 
   async updateBlowerConfig(
     blowerConfigId: string,
-    data: { saveIntervalSeconds?: number },
+    data: { saveIntervalSeconds?: number; scaleFactor?: number },
   ) {
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },

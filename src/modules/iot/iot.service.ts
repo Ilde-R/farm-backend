@@ -109,9 +109,27 @@ export class IotService {
       throw new ForbiddenException(`Blower no pertenece a este tenant`);
     }
 
-    return this.iotRepository.updateBlowerConfig(blower.id, {
-      saveIntervalSeconds: dto.saveIntervalSeconds,
-    });
+    const update: { saveIntervalSeconds?: number; scaleFactor?: number } = {};
+    if (dto.saveIntervalSeconds !== undefined) {
+      update.saveIntervalSeconds = dto.saveIntervalSeconds;
+    }
+    if (dto.scaleFactor !== undefined) {
+      update.scaleFactor = dto.scaleFactor;
+    }
+
+    const updated = await this.iotRepository.updateBlowerConfig(
+      blower.id,
+      update,
+    );
+
+    if (update.scaleFactor !== undefined) {
+      this.connectionRegistry.sendToDevice(blowerId, {
+        event: 'device_config_update',
+        data: { blowerId, scaleFactor: update.scaleFactor },
+      });
+    }
+
+    return updated;
   }
 
   async deleteBlower(tenantId: string, blowerId: string) {
