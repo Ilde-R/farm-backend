@@ -9,12 +9,14 @@ import { ProvisionDto } from './dto/provision.dto';
 import { UpdateBlowerConfigDto } from './dto/update-blower-config.dto';
 import { randomBytes } from 'crypto';
 import { IotRepository } from './repositories/iot.repository';
+import { DeviceConnectionRegistry } from '../../common/device-connection.registry';
 
 @Injectable()
 export class IotService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly iotRepository: IotRepository,
+    private readonly connectionRegistry: DeviceConnectionRegistry,
   ) {}
 
   async provision(tenantId: string, dto: ProvisionDto) {
@@ -77,7 +79,16 @@ export class IotService {
       );
     }
 
-    return this.iotRepository.updateKeyActive(key, false);
+    const result = await this.iotRepository.updateKeyActive(key, false);
+
+    if (existing.blowerConfig.blowerId) {
+      this.connectionRegistry.closeByBlowerId(
+        existing.blowerConfig.blowerId,
+        'key_revoked',
+      );
+    }
+
+    return result;
   }
 
   async updateBlowerConfig(
@@ -118,6 +129,7 @@ export class IotService {
     }
 
     await this.iotRepository.deleteBlowerConfig(blower.id);
+    this.connectionRegistry.closeByBlowerId(blowerId, 'device_removed');
     return { message: `Blower ${blowerId} eliminado correctamente` };
   }
 }

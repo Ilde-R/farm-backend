@@ -14,6 +14,7 @@ const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const iot_module_1 = require("./modules/iot/iot.module");
+const common_module_1 = require("./common/common.module");
 const core_1 = require("@nestjs/core");
 const throttler_1 = require("@nestjs/throttler");
 const auth_guard_1 = require("./modules/auth/guards/auth.guard");
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
                 ],
             }),
             prisma_module_1.PrismaModule,
+            common_module_1.CommonModule,
             sensors_module_1.SensorsModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

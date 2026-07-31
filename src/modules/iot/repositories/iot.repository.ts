@@ -73,6 +73,7 @@ export class IotRepository {
         blowerConfig: {
           select: {
             tenantId: true,
+            blowerId: true,
           },
         },
       },

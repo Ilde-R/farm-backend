@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { IotModule } from './modules/iot/iot.module';
+import { CommonModule } from './common/common.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
@@ -27,6 +28,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
       ],
     }),
     PrismaModule,
+    CommonModule,
     SensorsModule,
     AuthModule,
     UsersModule,

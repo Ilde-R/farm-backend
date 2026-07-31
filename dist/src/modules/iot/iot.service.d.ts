@@ -2,10 +2,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ProvisionDto } from './dto/provision.dto';
 import { UpdateBlowerConfigDto } from './dto/update-blower-config.dto';
 import { IotRepository } from './repositories/iot.repository';
+import { DeviceConnectionRegistry } from '../../common/device-connection.registry';
 export declare class IotService {
     private readonly prisma;
     private readonly iotRepository;
-    constructor(prisma: PrismaService, iotRepository: IotRepository);
+    private readonly connectionRegistry;
+    constructor(prisma: PrismaService, iotRepository: IotRepository, connectionRegistry: DeviceConnectionRegistry);
     provision(tenantId: string, dto: ProvisionDto): Promise<{
         deviceKey: string;
         blowerConfigId: string;
@@ -35,15 +37,15 @@ export declare class IotService {
         id: string;
         isActive: boolean;
         createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        key: string;
     })[]>;
     revokeDeviceKey(key: string, tenantId: string): Promise<{
         id: string;
         isActive: boolean;
         createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        key: string;
     }>;
     updateBlowerConfig(tenantId: string, blowerId: string, dto: UpdateBlowerConfigDto): Promise<{
         id: string;

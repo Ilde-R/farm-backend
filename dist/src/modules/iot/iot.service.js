@@ -14,12 +14,15 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const crypto_1 = require("crypto");
 const iot_repository_1 = require("./repositories/iot.repository");
+const device_connection_registry_1 = require("../../common/device-connection.registry");
 let IotService = class IotService {
     prisma;
     iotRepository;
-    constructor(prisma, iotRepository) {
+    connectionRegistry;
+    constructor(prisma, iotRepository, connectionRegistry) {
         this.prisma = prisma;
         this.iotRepository = iotRepository;
+        this.connectionRegistry = connectionRegistry;
     }
     async provision(tenantId, dto) {
         if (!tenantId) {
@@ -63,7 +66,12 @@ let IotService = class IotService {
         if (existing.blowerConfig.tenantId !== tenantId) {
             throw new common_1.ForbiddenException(`La llave del dispositivo no le pertenece a este tenant`);
         }
-        return this.iotRepository.updateKeyActive(key, false);
+        const result = await this.iotRepository.updateKeyActive(key, false);
+        const keyInfo = await this.iotRepository.findKeyWithTenant(key);
+        if (keyInfo?.blowerConfig?.blowerId) {
+            this.connectionRegistry.closeByBlowerId(keyInfo.blowerConfig.blowerId, 'key_revoked');
+        }
+        return result;
     }
     async updateBlowerConfig(tenantId, blowerId, dto) {
         const blower = await this.iotRepository.findBlowerConfig(tenantId, blowerId);
@@ -86,6 +94,7 @@ let IotService = class IotService {
             throw new common_1.ForbiddenException(`Blower no pertenece a este tenant`);
         }
         await this.iotRepository.deleteBlowerConfig(blower.id);
+        this.connectionRegistry.closeByBlowerId(blowerId, 'device_removed');
         return { message: `Blower ${blowerId} eliminado correctamente` };
     }
 };
@@ -93,6 +102,7 @@ exports.IotService = IotService;
 exports.IotService = IotService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        iot_repository_1.IotRepository])
+        iot_repository_1.IotRepository,
+        device_connection_registry_1.DeviceConnectionRegistry])
 ], IotService);
 //# sourceMappingURL=iot.service.js.map

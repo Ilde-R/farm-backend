@@ -85,7 +85,10 @@ export class SensorsService
       lastAlertState: state.lastAlertState,
       cachedAt: now,
     });
-    return { lastSaveAt: state.lastSaveAt, lastAlertState: state.lastAlertState };
+    return {
+      lastSaveAt: state.lastSaveAt,
+      lastAlertState: state.lastAlertState,
+    };
   }
 
   /**
@@ -125,8 +128,9 @@ export class SensorsService
       );
     }
 
-    const { lastSaveAt, lastAlertState } =
-      await this.getCachedAlertState(data.blowerConfigId);
+    const { lastSaveAt, lastAlertState } = await this.getCachedAlertState(
+      data.blowerConfigId,
+    );
 
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
@@ -150,14 +154,22 @@ export class SensorsService
         source: 'alert',
       });
 
-      await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+      await this.updateCachedAlertState(
+        data.blowerConfigId,
+        new Date(now),
+        isAlert,
+      );
 
       return { psi: data.psi, isAlert, source: 'alert' };
     }
 
     // Time-based scheduled save — buffer
     if (now - lastSaveAt >= saveIntervalMs) {
-      await this.updateCachedAlertState(data.blowerConfigId, new Date(now), isAlert);
+      await this.updateCachedAlertState(
+        data.blowerConfigId,
+        new Date(now),
+        isAlert,
+      );
 
       this.readingBuffer.push({
         tenant: { connect: { id: data.tenantId } },

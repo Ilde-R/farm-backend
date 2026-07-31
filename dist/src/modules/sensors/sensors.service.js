@@ -54,7 +54,10 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
             lastAlertState: state.lastAlertState,
             cachedAt: now,
         });
-        return { lastSaveAt: state.lastSaveAt, lastAlertState: state.lastAlertState };
+        return {
+            lastSaveAt: state.lastSaveAt,
+            lastAlertState: state.lastAlertState,
+        };
     }
     async updateCachedAlertState(blowerConfigId, lastSaveAt, isAlert) {
         await this.sensorsRepository.updateAlertState(blowerConfigId, lastSaveAt, isAlert);
