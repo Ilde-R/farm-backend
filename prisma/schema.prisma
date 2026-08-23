@@ -22,6 +22,7 @@ model Tenant {
   users User[]
   blowerConfigs BlowerConfig[]
   pressureReadings PressureReading[]
+  tanks Tank[]
 
   @@map("tenants")
 }
@@ -79,7 +80,7 @@ model BlowerConfig {
 
   firmwareVersion String?
   wifiRssi        Int?
-  uptimeMs        Int?
+  uptimeMs        BigInt?
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
   scaleFactor     Float?  @default(25000.0)
@@ -126,4 +127,70 @@ model PressureReading {
   @@index([tenantId, isAlert])
 
   @@map("pressure_reading")
+}
+
+model Tank {
+  id String  @id @default(uuid()) @db.Uuid
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId String? @db.Uuid
+
+  tankNumber Int
+  tankStatus TanksStatus @default(empty)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batches Batch[]
+  tankMovements TankMovement[]
+  @@map("tanks")
+}
+
+model Batch {
+  id String @id @default(uuid()) @db.Uuid
+  tank Tank? @relation(fields: [tankId], references: [id], onDelete: SetNull)
+  tankId String? @db.Uuid
+
+  stockingDate DateTime  @default(now())
+  initialQuantity Int
+  currentQuantity Int
+  harvestedDate DateTime?
+  batchesStatus BatchesStatus @default(isActive)
+
+  createdAt DateTime  @default(now())
+
+  tankMovements TankMovement[]
+  @@map("Batches")
+} 
+
+model TankMovement {
+  id String @id @default(uuid()) @db.Uuid
+  batch Batch @relation(fields: [batchId], references: [id])
+  batchId String @db.Uuid
+  tank Tank @relation(fields: [tankId], references: [id])
+  tankId String @db.Uuid
+
+  movementType MovementType
+  quantity Int 
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@map("tanks_movements")
+}
+
+enum TanksStatus {
+  isActive
+  empty
+  maintenance
+}
+ 
+enum BatchesStatus {
+  isActive
+  harvested
+}
+
+enum MovementType {
+  sale
+  mortality
+  transfer
 }

@@ -472,7 +472,7 @@ export class SensorsGateway
       await this.sensorsService.updateDeviceMetadata(clientInfo.blowerConfigId, {
         firmwareVersion: data.firmware,
         wifiRssi: data.rssi,
-        uptimeMs: data.uptime,
+        uptimeMs: data.uptime === undefined ? undefined : BigInt(data.uptime),
         freeHeap: data.heap,
       });
 

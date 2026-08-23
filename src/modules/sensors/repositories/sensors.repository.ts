@@ -68,7 +68,7 @@ export class SensorsRepository extends BaseRepository<
     data: {
       firmwareVersion?: string;
       wifiRssi?: number;
-      uptimeMs?: number;
+      uptimeMs?: bigint;
       freeHeap?: number;
     },
   ) {

@@ -102,7 +102,7 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
     data: {
       firmwareVersion?: string;
       wifiRssi?: number;
-      uptimeMs?: number;
+      uptimeMs?: bigint;
       freeHeap?: number;
     },
   ) {
