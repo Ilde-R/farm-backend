@@ -14,4 +14,8 @@ export class DeviceTimeService {
     if (offset == null) return undefined;
     return new Date(offset + deviceTs);
   }
+
+  clearDeviceInfo(blowerConfigId: string) {
+    this.offsets.delete(blowerConfigId);
+  }
 }

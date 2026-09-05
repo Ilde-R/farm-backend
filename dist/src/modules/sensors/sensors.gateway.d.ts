@@ -41,7 +41,13 @@ export declare class SensorsGateway implements OnGatewayInit, OnGatewayConnectio
         tenantId?: string;
         ts?: number;
     }, client: WebSocket): Promise<{
+        status: string;
+        message: string;
+        ok?: undefined;
+    } | {
         ok: boolean;
+        status?: undefined;
+        message?: undefined;
     } | undefined>;
     handleBatchReadings(data: {
         readings: {

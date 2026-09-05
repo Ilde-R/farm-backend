@@ -21,32 +21,45 @@ export declare class IotService {
         tenantId: string;
         currentThreshold: number;
     } | null>;
-    listDeviceKeys(tenantId: string): Promise<{
+    listDeviceKeys(tenantId: string): Promise<({
+        blowerConfig: {
+            blowerId: string;
+            name: string | null;
+            firmwareVersion: string | null;
+            wifiRssi: number | null;
+            uptimeMs: number | null;
+            freeHeap: number | null;
+            readIntervalMs: number | null;
+            scaleFactor: number | null;
+            saveIntervalSeconds: number;
+        };
+    } & {
         blowerConfigId: string;
-        id: string;
-        createdAt: Date;
-        isActive: boolean;
         key: string;
-    }[]>;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
+    })[]>;
     revokeDeviceKey(key: string, tenantId: string): Promise<{
         blowerConfigId: string;
-        id: string;
-        createdAt: Date;
-        isActive: boolean;
         key: string;
+        id: string;
+        isActive: boolean;
+        createdAt: Date;
     }>;
     updateBlowerConfig(tenantId: string, blowerId: string, dto: UpdateBlowerConfigDto): Promise<{
         blowerId: string;
         tenantId: string;
-        currentThreshold: number;
-        name: string | null;
         id: string;
+        name: string | null;
+        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: bigint | null;
+        uptimeMs: number | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
+        saveIntervalSeconds: number;
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     }>;

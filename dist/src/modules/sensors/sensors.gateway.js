@@ -219,6 +219,10 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
         this.clearHeartbeat(client);
         this.clearDeviceRevalidation(client);
         const info = this.connectionRegistry.clients.get(client);
+        if (info?.blowerConfigId &&
+            !this.connectionRegistry.hasConnectionForBlowerConfig(info.blowerConfigId, client)) {
+            this.deviceTimeService.clearDeviceInfo(info.blowerConfigId);
+        }
         if (info?.blowerId) {
             this.broadcastToUsers(info.tenantId, {
                 event: 'device_offline',
@@ -230,8 +234,14 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     async handleRegisterBlower(data, client) {
         try {
             const clientInfo = this.ensureClientInfo(client);
-            const tenantId = data.tenantId || clientInfo?.tenantId;
-            const blowerId = data.blowerId || clientInfo?.blowerId;
+            if (!clientInfo?.tenantId) {
+                return {
+                    status: 'error',
+                    message: 'Cliente no autenticado, no se puede registrar blower',
+                };
+            }
+            const tenantId = clientInfo.tenantId;
+            const blowerId = clientInfo.blowerId ?? data.blowerId;
             if (!tenantId || !blowerId) {
                 return { status: 'error', message: 'tenantId y blowerId requeridos' };
             }
@@ -255,11 +265,14 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
     async handlePressureReading(data, client) {
         try {
             const clientInfo = this.ensureClientInfo(client);
+            if (!clientInfo?.tenantId) {
+                return { status: 'error', message: 'Cliente no autenticado' };
+            }
             const enriched = {
                 psi: data.psi ?? 0,
-                blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
-                tenantId: data.tenantId || clientInfo?.tenantId,
-                blowerId: data.blowerId || clientInfo?.blowerId,
+                blowerConfigId: clientInfo.blowerConfigId,
+                tenantId: clientInfo.tenantId,
+                blowerId: clientInfo.blowerId,
                 deviceTs: data.ts,
                 deviceTime: data.ts !== undefined && clientInfo?.blowerConfigId
                     ? this.deviceTimeService.toRealTime(clientInfo.blowerConfigId, data.ts)

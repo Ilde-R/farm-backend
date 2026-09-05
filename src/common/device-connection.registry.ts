@@ -26,6 +26,23 @@ export class DeviceConnectionRegistry {
     this.clients.delete(client);
   }
 
+  hasConnectionForBlowerConfig(
+    blowerConfigId: string,
+    exclude?: WebSocket,
+  ) {
+    for (const [client, info] of this.clients) {
+      if (
+        client !== exclude &&
+        info.blowerConfigId === blowerConfigId &&
+        client.readyState === WebSocket.OPEN
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   closeByBlowerId(blowerId: string, reason: string) {
     for (const [client, info] of this.clients) {
       if (info.blowerId === blowerId) {
