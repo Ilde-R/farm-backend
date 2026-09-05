@@ -20,8 +20,8 @@ export declare class IotService {
     } | null>;
     listDeviceKeys(tenantId: string): Promise<({
         blowerConfig: {
-            name: string | null;
             blowerId: string;
+            name: string | null;
             firmwareVersion: string | null;
             wifiRssi: number | null;
             uptimeMs: bigint | null;
@@ -30,17 +30,17 @@ export declare class IotService {
             scaleFactor: number | null;
         };
     } & {
-        id: string;
-        isActive: boolean;
-        createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        id: string;
+        createdAt: Date;
+        isActive: boolean;
+        key: string;
     })[]>;
     revokeDeviceKey(key: string, tenantId: string): Promise<{
-        id: string;
-        isActive: boolean;
-        createdAt: Date;
-        key: string;
         blowerConfigId: string;
+        id: string;
+        createdAt: Date;
+        isActive: boolean;
+        key: string;
     }>;
 }

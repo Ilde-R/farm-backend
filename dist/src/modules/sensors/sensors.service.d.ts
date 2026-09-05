@@ -8,11 +8,11 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     private readonly logger;
     constructor(sensorsRepository: SensorsRepository);
     registerBlower(tenantId: string, blowerId: string): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
@@ -23,20 +23,20 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     }>;
     createReading(data: CreateSensorDto): Promise<{
-        id: bigint;
+        psi: number;
         tenantId: string;
         blowerConfigId: string | null;
-        psi: number;
         isAlert: boolean;
+        id: bigint;
         createdAt: Date;
     } | null>;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
@@ -56,11 +56,11 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         uptimeMs?: bigint;
         freeHeap?: number;
     }): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
@@ -74,11 +74,11 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
@@ -89,11 +89,11 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     }>;
     getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
@@ -104,11 +104,11 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     } | null>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
+        blowerId: string;
+        tenantId: string;
+        currentThreshold: number;
         name: string | null;
         id: string;
-        tenantId: string;
-        blowerId: string;
-        currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
         uptimeMs: bigint | null;
