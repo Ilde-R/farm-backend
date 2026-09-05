@@ -14,7 +14,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
@@ -38,7 +38,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
@@ -52,7 +52,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     updateDeviceMetadata(blowerConfigId: string, data: {
         firmwareVersion?: string;
         wifiRssi?: number;
-        uptimeMs?: number;
+        uptimeMs?: bigint;
         freeHeap?: number;
     }): Promise<{
         id: string;
@@ -62,7 +62,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
@@ -80,7 +80,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
@@ -95,7 +95,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;
@@ -110,7 +110,7 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         currentThreshold: number;
         firmwareVersion: string | null;
         wifiRssi: number | null;
-        uptimeMs: number | null;
+        uptimeMs: bigint | null;
         freeHeap: number | null;
         readIntervalMs: number | null;
         scaleFactor: number | null;

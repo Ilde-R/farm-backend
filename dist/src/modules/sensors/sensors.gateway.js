@@ -346,7 +346,7 @@ let SensorsGateway = SensorsGateway_1 = class SensorsGateway {
             await this.sensorsService.updateDeviceMetadata(clientInfo.blowerConfigId, {
                 firmwareVersion: data.firmware,
                 wifiRssi: data.rssi,
-                uptimeMs: data.uptime,
+                uptimeMs: data.uptime === undefined ? undefined : BigInt(data.uptime),
                 freeHeap: data.heap,
             });
             if (client.readyState === ws_2.default.OPEN) {
