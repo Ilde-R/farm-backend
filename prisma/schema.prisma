@@ -16,8 +16,8 @@ model Tenant {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   users User[]
   blowerConfigs BlowerConfig[]
@@ -35,8 +35,8 @@ model User {
   username String
   email    String @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   sessions Session[]
   credential Credential?
@@ -61,9 +61,9 @@ model Session {
   refreshToken String  @unique
   isActive     Boolean @default(true)
 
-  expiresAt  DateTime?
-  createdAt  DateTime  @default(now())
-  lastUsedAt DateTime  @updatedAt
+  expiresAt  DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  lastUsedAt DateTime  @updatedAt @db.Timestamptz(3)
 
   @@index([userId])
   @@map("sessions")
@@ -84,7 +84,7 @@ model BlowerConfig {
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
   scaleFactor     Float?  @default(25000.0)
-  lastSaveAt DateTime?
+  lastSaveAt DateTime? @db.Timestamptz(3)
   lastAlertState Boolean @default(false)
 
   pressureReadings PressureReading[]
@@ -102,7 +102,7 @@ model DeviceKey {
   blowerConfig BlowerConfig @relation(fields: [blowerConfigId], references: [id], onDelete: Cascade)
   blowerConfigId String  @db.Uuid
   
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([key])
   @@map("device_key")
@@ -119,7 +119,7 @@ model PressureReading {
   psi Float
   isAlert Boolean @default(false)
   
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([blowerConfigId])
@@ -137,8 +137,8 @@ model Tank {
   tankNumber Int
   tankStatus TanksStatus @default(empty)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   batches Batch[]
   tankMovements TankMovement[]
@@ -150,16 +150,16 @@ model Batch {
   tank Tank? @relation(fields: [tankId], references: [id], onDelete: SetNull)
   tankId String? @db.Uuid
 
-  stockingDate DateTime  @default(now())
+  stockingDate DateTime  @default(now()) @db.Timestamptz(3)
   initialQuantity Int
   currentQuantity Int
-  harvestedDate DateTime?
+  harvestedDate DateTime? @db.Timestamptz(3)
   batchesStatus BatchesStatus @default(isActive)
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime  @default(now()) @db.Timestamptz(3) 
 
   tankMovements TankMovement[]
-  @@map("Batches")
+  @@map("batches")
 } 
 
 model TankMovement {
@@ -173,7 +173,7 @@ model TankMovement {
   quantity Int 
   notes String?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@map("tanks_movements")
 }

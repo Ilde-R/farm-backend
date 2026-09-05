@@ -100,6 +100,36 @@ let SensorsRepository = class SensorsRepository extends base_repository_1.BaseRe
             data: { lastSaveAt, lastAlertState },
         });
     }
+    async findPressureReadingsForChart(tenantId, blowerConfigId, from, to) {
+        return this.prisma.pressureReading.findMany({
+            where: {
+                tenantId,
+                ...(blowerConfigId && { blowerConfigId }),
+                ...(from || to
+                    ? {
+                        createdAt: {
+                            ...(from && { gte: from }),
+                            ...(to && { lte: to }),
+                        },
+                    }
+                    : {}),
+            },
+            select: {
+                psi: true,
+                isAlert: true,
+                createdAt: true,
+                blowerConfig: {
+                    select: {
+                        blowerId: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+        });
+    }
 };
 exports.SensorsRepository = SensorsRepository;
 exports.SensorsRepository = SensorsRepository = __decorate([

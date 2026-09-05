@@ -11,17 +11,17 @@ export declare class UsersController {
         total: any;
     }>;
     getProfile(req: RequestWithUser): Promise<{
+        tenantId: string | null;
+        email: string;
+        username: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        email: string;
-        tenantId: string | null;
-        username: string;
     }>;
     updateProfile(req: RequestWithUser, updateProflileDto: UpdateProfileDto): Promise<{
-        id: string;
         email: string;
         username: string;
+        id: string;
     }>;
     changePassword(req: RequestWithUser, changePasswordDto: ChangePasswordDto): Promise<{
         message: string;

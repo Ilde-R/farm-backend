@@ -33,14 +33,14 @@ export declare class IotService {
         id: string;
         isActive: boolean;
         createdAt: Date;
-        blowerConfigId: string;
         key: string;
+        blowerConfigId: string;
     })[]>;
     revokeDeviceKey(key: string, tenantId: string): Promise<{
         id: string;
         isActive: boolean;
         createdAt: Date;
-        blowerConfigId: string;
         key: string;
+        blowerConfigId: string;
     }>;
 }

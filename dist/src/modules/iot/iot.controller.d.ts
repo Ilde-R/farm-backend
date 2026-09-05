@@ -26,14 +26,14 @@ export declare class IotController {
         id: string;
         isActive: boolean;
         createdAt: Date;
-        blowerConfigId: string;
         key: string;
+        blowerConfigId: string;
     })[]>;
     revokeDevice(key: string, req: RequestWithUser): Promise<{
         id: string;
         isActive: boolean;
         createdAt: Date;
-        blowerConfigId: string;
         key: string;
+        blowerConfigId: string;
     }>;
 }

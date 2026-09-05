@@ -132,4 +132,40 @@ export class SensorsRepository extends BaseRepository<
       data: { lastSaveAt, lastAlertState },
     });
   }
+
+  async findPressureReadingsForChart(
+    tenantId: string,
+    blowerConfigId?: string,
+    from?: Date,
+    to?: Date,
+  ) {
+    return this.prisma.pressureReading.findMany({
+      where: {
+        tenantId,
+        ...(blowerConfigId && { blowerConfigId }),
+        ...(from || to
+          ? {
+              createdAt: {
+                ...(from && { gte: from }),
+                ...(to && { lte: to }),
+              },
+            }
+          : {}),
+      },
+      select: {
+        psi: true,
+        isAlert: true,
+        createdAt: true,
+        blowerConfig: {
+          select: {
+            blowerId: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
 }

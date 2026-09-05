@@ -2,13 +2,14 @@ import { CreateSensorDto } from './dto/create-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
 import { PressureReading } from '@prisma/client';
+import { ReadingChartQueryDto } from './dto/reading-chart-query.dto';
 export declare class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> {
     private readonly sensorsRepository;
     private readonly logger;
     constructor(sensorsRepository: SensorsRepository);
     registerBlower(tenantId: string, blowerId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -23,16 +24,16 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
     }>;
     createReading(data: CreateSensorDto): Promise<{
         id: bigint;
-        createdAt: Date;
         tenantId: string;
         blowerConfigId: string | null;
         psi: number;
         isAlert: boolean;
+        createdAt: Date;
     } | null>;
     getLatestThreshold(tenantId: string, blowerId?: string): Promise<number>;
     updateThreshold(tenantId: string, blowerId: string, threshold: number): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -55,8 +56,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         uptimeMs?: bigint;
         freeHeap?: number;
     }): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -73,8 +74,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         readIntervalMs?: number;
         scaleFactor?: number;
     }): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -88,8 +89,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     }>;
     getBlowerConfigByTenantAndId(tenantId: string, blowerId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -103,8 +104,8 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastAlertState: boolean;
     } | null>;
     getBlowerConfigById(blowerConfigId: string): Promise<{
-        id: string;
         name: string | null;
+        id: string;
         tenantId: string;
         blowerId: string;
         currentThreshold: number;
@@ -117,4 +118,12 @@ export declare class SensorsService extends BaseService<PressureReading, CreateS
         lastSaveAt: Date | null;
         lastAlertState: boolean;
     } | null>;
+    getReadingsForChart(tenantId: string, query: ReadingChartQueryDto): Promise<{
+        date: Date;
+        psi: number;
+        isAlert: boolean;
+        blowerId: string | undefined;
+        blowerName: string | null | undefined;
+    }[]>;
+    private getReadingDateRange;
 }

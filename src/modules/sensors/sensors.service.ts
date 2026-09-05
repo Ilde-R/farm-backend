@@ -3,6 +3,7 @@ import { CreateSensorDto } from './dto/create-sensor.dto';
 import { BaseService } from '../../common/abstracts/base.service';
 import { SensorsRepository } from './repositories/sensors.repository';
 import { PressureReading } from '@prisma/client';
+import { ReadingChartQueryDto, ReadingPeriod } from './dto/reading-chart-query.dto';
 
 @Injectable()
 export class SensorsService extends BaseService<PressureReading, CreateSensorDto, Partial<PressureReading>> {
@@ -38,7 +39,7 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
 
-    if (now - lastSaveAt >= 300000 || alertChanged) {
+    if (now - lastSaveAt >= 1800000 || alertChanged) {
       await this.sensorsRepository.updateAlertState(
         data.blowerConfigId,
         new Date(now),
@@ -125,5 +126,80 @@ export class SensorsService extends BaseService<PressureReading, CreateSensorDto
 
   async getBlowerConfigById(blowerConfigId: string) {
     return this.sensorsRepository.getBlowerConfigById(blowerConfigId);
+  }
+
+  async getReadingsForChart(
+    tenantId: string,
+    query: ReadingChartQueryDto,
+  ) {
+    const { from, to } = this.getReadingDateRange(query.period);
+
+    const readings =
+      await this.sensorsRepository.findPressureReadingsForChart(
+        tenantId,
+        query.blowerConfigId,
+        from,
+        to,
+      );
+
+    return readings.map((reading) => ({
+      date: reading.createdAt,
+      psi: reading.psi,
+      isAlert: reading.isAlert,
+      blowerId: reading.blowerConfig?.blowerId,
+      blowerName: reading.blowerConfig?.name,
+    }));
+  }
+
+  private getReadingDateRange(period: ReadingPeriod) {
+    const now = new Date();
+    const currentYear = now.getUTCFullYear();
+    const currentMonth = now.getUTCMonth();
+    const currentDay = now.getUTCDate();
+
+    switch (period) {
+      case ReadingPeriod.MONTH: {
+        const from = new Date(
+          Date.UTC(currentYear, currentMonth, 1),
+        );
+
+        const to = new Date(
+          Date.UTC(currentYear, currentMonth + 1, 1),
+        );
+
+        return { from, to };
+      }
+
+      case ReadingPeriod.YEAR: {
+        const from = new Date(
+          Date.UTC(currentYear, 0, 1),
+        );
+
+        const to = new Date(
+          Date.UTC(currentYear + 1, 0, 1),
+        );
+
+        return { from, to };
+      }
+
+      case ReadingPeriod.ALL:
+        return {
+          from: undefined,
+          to: undefined,
+        };
+
+      case ReadingPeriod.TODAY:
+      default: {
+        const from = new Date(
+          Date.UTC(currentYear, currentMonth, currentDay),
+        );
+
+        const to = new Date(
+          Date.UTC(currentYear, currentMonth, currentDay + 1),
+        );
+
+        return { from, to };
+      }
+    }
   }
 }

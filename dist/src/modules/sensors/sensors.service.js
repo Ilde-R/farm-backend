@@ -14,6 +14,7 @@ exports.SensorsService = void 0;
 const common_1 = require("@nestjs/common");
 const base_service_1 = require("../../common/abstracts/base.service");
 const sensors_repository_1 = require("./repositories/sensors.repository");
+const reading_chart_query_dto_1 = require("./dto/reading-chart-query.dto");
 let SensorsService = SensorsService_1 = class SensorsService extends base_service_1.BaseService {
     sensorsRepository;
     logger = new common_1.Logger(SensorsService_1.name);
@@ -37,7 +38,7 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
         const { lastSaveAt, lastAlertState } = await this.sensorsRepository.getAlertState(data.blowerConfigId);
         const now = Date.now();
         const alertChanged = isAlert !== lastAlertState;
-        if (now - lastSaveAt >= 300000 || alertChanged) {
+        if (now - lastSaveAt >= 1800000 || alertChanged) {
             await this.sensorsRepository.updateAlertState(data.blowerConfigId, new Date(now), isAlert);
             return this.sensorsRepository.createReading({
                 tenant: { connect: { id: data.tenantId } },
@@ -84,6 +85,46 @@ let SensorsService = SensorsService_1 = class SensorsService extends base_servic
     }
     async getBlowerConfigById(blowerConfigId) {
         return this.sensorsRepository.getBlowerConfigById(blowerConfigId);
+    }
+    async getReadingsForChart(tenantId, query) {
+        const { from, to } = this.getReadingDateRange(query.period);
+        const readings = await this.sensorsRepository.findPressureReadingsForChart(tenantId, query.blowerConfigId, from, to);
+        return readings.map((reading) => ({
+            date: reading.createdAt,
+            psi: reading.psi,
+            isAlert: reading.isAlert,
+            blowerId: reading.blowerConfig?.blowerId,
+            blowerName: reading.blowerConfig?.name,
+        }));
+    }
+    getReadingDateRange(period) {
+        const now = new Date();
+        const currentYear = now.getUTCFullYear();
+        const currentMonth = now.getUTCMonth();
+        const currentDay = now.getUTCDate();
+        switch (period) {
+            case reading_chart_query_dto_1.ReadingPeriod.MONTH: {
+                const from = new Date(Date.UTC(currentYear, currentMonth, 1));
+                const to = new Date(Date.UTC(currentYear, currentMonth + 1, 1));
+                return { from, to };
+            }
+            case reading_chart_query_dto_1.ReadingPeriod.YEAR: {
+                const from = new Date(Date.UTC(currentYear, 0, 1));
+                const to = new Date(Date.UTC(currentYear + 1, 0, 1));
+                return { from, to };
+            }
+            case reading_chart_query_dto_1.ReadingPeriod.ALL:
+                return {
+                    from: undefined,
+                    to: undefined,
+                };
+            case reading_chart_query_dto_1.ReadingPeriod.TODAY:
+            default: {
+                const from = new Date(Date.UTC(currentYear, currentMonth, currentDay));
+                const to = new Date(Date.UTC(currentYear, currentMonth, currentDay + 1));
+                return { from, to };
+            }
+        }
     }
 };
 exports.SensorsService = SensorsService;

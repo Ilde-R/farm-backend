@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SensorsModule = void 0;
 const common_1 = require("@nestjs/common");
+const sensors_controller_1 = require("./sensors.controller");
 const sensors_service_1 = require("./sensors.service");
 const sensors_gateway_1 = require("./sensors.gateway");
 const sensors_repository_1 = require("./repositories/sensors.repository");
@@ -18,7 +19,9 @@ exports.SensorsModule = SensorsModule;
 exports.SensorsModule = SensorsModule = __decorate([
     (0, common_1.Module)({
         imports: [iot_module_1.IotModule],
+        controllers: [sensors_controller_1.SensorsController],
         providers: [sensors_gateway_1.SensorsGateway, sensors_service_1.SensorsService, sensors_repository_1.SensorsRepository],
+        exports: [sensors_service_1.SensorsService],
     })
 ], SensorsModule);
 //# sourceMappingURL=sensors.module.js.map
