@@ -8,3 +8,6 @@ services:
     ports:
       - '8001:8001'
     restart: unless-stopped
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=256
+    mem_limit: 480m
