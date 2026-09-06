@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     env_file:
       - .env
     ports:
       - '8001:8001'
     restart: unless-stopped
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=256
+    mem_limit: 400m

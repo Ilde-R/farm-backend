@@ -3,16 +3,16 @@ WORKDIR /usr/src/app
 
 RUN apk add --no-cache openssl
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci --ignore-scripts
-RUN npx prisma generate
+RUN npm install --ignore-scripts
+RUN NODE_OPTIONS="--max-old-space-size=256" npx prisma generate
 
-FROM development AS build
 COPY . .
 
-RUN npm run build
+FROM development AS build
+RUN NODE_OPTIONS="--max-old-space-size=256" npm run build
 
 RUN npm prune --omit=dev
 
@@ -23,8 +23,12 @@ RUN apk add --no-cache openssl
 
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/package*.json ./
+COPY --from=build /usr/src/app/prisma ./prisma
+COPY --from=build /usr/src/app/prisma.config.ts ./
+
 USER node
 
-EXPOSE 8000
+EXPOSE 3000
 
 CMD [ "node", "dist/src/main.js" ]
