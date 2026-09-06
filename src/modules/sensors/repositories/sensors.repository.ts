@@ -68,13 +68,19 @@ export class SensorsRepository extends BaseRepository<
     data: {
       firmwareVersion?: string;
       wifiRssi?: number;
-      uptimeMs?: bigint;
+      uptimeMs?: number | bigint;
       freeHeap?: number;
     },
   ) {
+    const normalizedData = {
+      ...data,
+      uptimeMs:
+        data.uptimeMs === undefined ? undefined : BigInt(data.uptimeMs),
+    };
+
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },
-      data,
+      data: normalizedData,
     });
   }
 

@@ -266,7 +266,7 @@ export class SensorsService
     data: {
       firmwareVersion?: string;
       wifiRssi?: number;
-      uptimeMs?: bigint;
+      uptimeMs?: number | bigint;
       freeHeap?: number;
     },
   ) {
