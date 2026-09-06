@@ -20,6 +20,7 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: fase //Borrarrrrrrr
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
