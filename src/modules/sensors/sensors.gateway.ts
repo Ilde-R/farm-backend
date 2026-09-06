@@ -607,7 +607,7 @@ export class SensorsGateway
         {
           firmwareVersion: data.firmware,
           wifiRssi: data.rssi,
-          uptimeMs: data.uptime === undefined ? undefined : BigInt(data.uptime),
+          uptimeMs: data.uptime,
           freeHeap: data.heap,
         },
       );

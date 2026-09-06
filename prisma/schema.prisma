@@ -80,7 +80,7 @@ model BlowerConfig {
 
   firmwareVersion String?
   wifiRssi        Int?
-  uptimeMs        BigInt?
+  uptimeMs        Int?
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
   scaleFactor     Float?  @default(250000.0)

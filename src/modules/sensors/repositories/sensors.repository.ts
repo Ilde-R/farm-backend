@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../../common/abstracts/base.repository';
 import { CreateSensorDto } from '../dto/create-sensor.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { PressureReading } from '@prisma/client';
+import { Prisma, PressureReading } from '@prisma/client';
 
 @Injectable()
 export class SensorsRepository extends BaseRepository<
@@ -68,19 +68,20 @@ export class SensorsRepository extends BaseRepository<
     data: {
       firmwareVersion?: string;
       wifiRssi?: number;
-      uptimeMs?: number | bigint;
+      uptimeMs?: number;
       freeHeap?: number;
     },
   ) {
-    const normalizedData = {
-      ...data,
-      uptimeMs:
-        data.uptimeMs === undefined ? undefined : BigInt(data.uptimeMs),
+    const updateData: Prisma.BlowerConfigUpdateInput = {
+      firmwareVersion: data.firmwareVersion,
+      wifiRssi: data.wifiRssi,
+      uptimeMs: data.uptimeMs,
+      freeHeap: data.freeHeap,
     };
 
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },
-      data: normalizedData,
+      data: updateData,
     });
   }
 
