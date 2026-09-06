@@ -7,4 +7,5 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run start:dev"
+    restart: "no"
+    command: sh -c "npx prisma generate && npx prisma db push && npm run start:dev"

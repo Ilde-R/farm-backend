@@ -9,7 +9,12 @@ import { IotModule } from '../iot/iot.module';
 @Module({
   imports: [IotModule],
   controllers: [SensorsController],
-  providers: [SensorsGateway, SensorsService, SensorsRepository],
+  providers: [
+    SensorsGateway,
+    SensorsService,
+    SensorsRepository,
+    DeviceTimeService,
+  ],
   exports: [SensorsService],
 })
 export class SensorsModule {}

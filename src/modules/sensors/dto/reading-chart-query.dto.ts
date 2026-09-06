@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsUUID } from "class-validator";
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
 
 export enum ReadingPeriod {
     TODAY = 'today',
