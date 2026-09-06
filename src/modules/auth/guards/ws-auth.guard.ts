@@ -31,7 +31,7 @@ export class WsAuthGuard implements CanActivate {
       client.upgradeReq) as IncomingMessage;
 
     if (!req) {
-      throw new WsException('No upgrade request available');
+      throw new WsException('No hay solicitud de upgrade disponible');
     }
 
     const url = new URL(

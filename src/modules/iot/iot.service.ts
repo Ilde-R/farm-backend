@@ -1,20 +1,22 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProvisionDto } from './dto/provision.dto';
+import { UpdateBlowerConfigDto } from './dto/update-blower-config.dto';
 import { randomBytes } from 'crypto';
 import { IotRepository } from './repositories/iot.repository';
+import { DeviceConnectionRegistry } from '../../common/device-connection.registry';
 
 @Injectable()
 export class IotService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly iotRepository: IotRepository,
+    private readonly connectionRegistry: DeviceConnectionRegistry,
   ) {}
 
   async provision(tenantId: string, dto: ProvisionDto) {
@@ -77,6 +79,75 @@ export class IotService {
       );
     }
 
-    return this.iotRepository.updateKeyActive(key, false);
+    const result = await this.iotRepository.updateKeyActive(key, false);
+
+    if (existing.blowerConfig.blowerId) {
+      this.connectionRegistry.closeByBlowerId(
+        existing.blowerConfig.blowerId,
+        'key_revoked',
+      );
+    }
+
+    return result;
+  }
+
+  async updateBlowerConfig(
+    tenantId: string,
+    blowerId: string,
+    dto: UpdateBlowerConfigDto,
+  ) {
+    const blower = await this.iotRepository.findBlowerConfig(
+      tenantId,
+      blowerId,
+    );
+
+    if (!blower) {
+      throw new NotFoundException(`Blower ${blowerId} no encontrado`);
+    }
+
+    if (blower.tenantId !== tenantId) {
+      throw new ForbiddenException(`Blower no pertenece a este tenant`);
+    }
+
+    const update: { saveIntervalSeconds?: number; scaleFactor?: number } = {};
+    if (dto.saveIntervalSeconds !== undefined) {
+      update.saveIntervalSeconds = dto.saveIntervalSeconds;
+    }
+    if (dto.scaleFactor !== undefined) {
+      update.scaleFactor = dto.scaleFactor;
+    }
+
+    const updated = await this.iotRepository.updateBlowerConfig(
+      blower.id,
+      update,
+    );
+
+    if (update.scaleFactor !== undefined) {
+      this.connectionRegistry.sendToDevice(blowerId, {
+        event: 'device_config_update',
+        data: { blowerId, scaleFactor: update.scaleFactor },
+      });
+    }
+
+    return updated;
+  }
+
+  async deleteBlower(tenantId: string, blowerId: string) {
+    const blower = await this.iotRepository.findBlowerConfig(
+      tenantId,
+      blowerId,
+    );
+
+    if (!blower) {
+      throw new NotFoundException(`Blower ${blowerId} no encontrado`);
+    }
+
+    if (blower.tenantId !== tenantId) {
+      throw new ForbiddenException(`Blower no pertenece a este tenant`);
+    }
+
+    await this.iotRepository.deleteBlowerConfig(blower.id);
+    this.connectionRegistry.closeByBlowerId(blowerId, 'device_removed');
+    return { message: `Blower ${blowerId} eliminado correctamente` };
   }
 }

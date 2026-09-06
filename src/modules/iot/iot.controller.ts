@@ -1,7 +1,17 @@
-import { Controller, Post, Body, Get, Patch, Param, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Patch,
+  Param,
+  Req,
+  Delete,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { IotService } from './iot.service';
 import { ProvisionDto } from './dto/provision.dto';
+import { UpdateBlowerConfigDto } from './dto/update-blower-config.dto';
 import type { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 
 @ApiTags('Iot')
@@ -28,5 +38,24 @@ export class IotController {
   @ApiOperation({ summary: 'Revocar una device key' })
   async revokeDevice(@Param('key') key: string, @Req() req: RequestWithUser) {
     return this.iotService.revokeDeviceKey(key, req.user.tenantId);
+  }
+
+  @Patch('blowers/:blowerId/config')
+  @ApiOperation({ summary: 'Configurar intervalo de guardado de un blower' })
+  async updateBlowerConfig(
+    @Param('blowerId') blowerId: string,
+    @Body() dto: UpdateBlowerConfigDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.iotService.updateBlowerConfig(req.user.tenantId, blowerId, dto);
+  }
+
+  @Delete('blowers/:blowerId')
+  @ApiOperation({ summary: 'Eliminar un blower y keys' })
+  async deleteBlower(
+    @Param('blowerId') blowerId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.iotService.deleteBlower(req.user.tenantId, blowerId);
   }
 }

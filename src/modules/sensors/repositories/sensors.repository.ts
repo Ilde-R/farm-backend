@@ -102,8 +102,19 @@ export class SensorsRepository extends BaseRepository<
     blowerConfig: { connect: { id: string } };
     psi: number;
     isAlert: boolean;
+    deviceTs?: number;
+    deviceTime?: Date;
+    source?: string;
   }) {
-    return this.prisma.pressureReading.create({ data });
+    const { deviceTs, deviceTime, source, ...rest } = data;
+    return this.prisma.pressureReading.create({
+      data: {
+        ...rest,
+        ...(deviceTs !== undefined ? { deviceTs } : {}),
+        ...(deviceTime !== undefined ? { deviceTime } : {}),
+        ...(source !== undefined ? { source } : {}),
+      },
+    });
   }
 
   async getAlertState(blowerConfigId: string) {
@@ -130,6 +141,31 @@ export class SensorsRepository extends BaseRepository<
     return this.prisma.blowerConfig.update({
       where: { id: blowerConfigId },
       data: { lastSaveAt, lastAlertState },
+    });
+  }
+
+  async createManyReadings(
+    data: {
+      tenantId: string;
+      blowerConfigId: string;
+      psi: number;
+      isAlert: boolean;
+      deviceTs?: number;
+      deviceTime?: Date;
+      source?: string;
+    }[],
+  ) {
+    if (data.length === 0) return;
+    return this.prisma.pressureReading.createMany({
+      data: data.map((r) => ({
+        tenantId: r.tenantId,
+        blowerConfigId: r.blowerConfigId,
+        psi: r.psi,
+        isAlert: r.isAlert,
+        ...(r.deviceTs !== undefined ? { deviceTs: r.deviceTs } : {}),
+        ...(r.deviceTime !== undefined ? { deviceTime: r.deviceTime } : {}),
+        ...(r.source !== undefined ? { source: r.source } : {}),
+      })),
     });
   }
 

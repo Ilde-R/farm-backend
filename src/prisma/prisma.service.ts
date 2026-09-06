@@ -21,7 +21,7 @@ export class PrismaService
       connectionString,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
-      max: 5,
+      max: 20,
     });
 
     pool.on('error', (err) => {

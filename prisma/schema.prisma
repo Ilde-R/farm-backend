@@ -83,7 +83,8 @@ model BlowerConfig {
   uptimeMs        BigInt?
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
-  scaleFactor     Float?  @default(25000.0)
+  scaleFactor     Float?  @default(250000.0)
+  saveIntervalSeconds Int @default(10800)
   lastSaveAt DateTime? @db.Timestamptz(3)
   lastAlertState Boolean @default(false)
 
@@ -105,6 +106,7 @@ model DeviceKey {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([key])
+  @@index([blowerConfigId])
   @@map("device_key")
 }
 
@@ -118,6 +120,9 @@ model PressureReading {
   
   psi Float
   isAlert Boolean @default(false)
+  deviceTs BigInt?
+  deviceTime DateTime?
+  source String @default("scheduled")
   
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 

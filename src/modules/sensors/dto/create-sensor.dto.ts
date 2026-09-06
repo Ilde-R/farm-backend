@@ -23,4 +23,15 @@ export class CreateSensorDto {
   @IsOptional()
   @IsNumber()
   currentThreshold?: number;
+
+  @IsOptional()
+  @IsNumber()
+  deviceTs?: number;
+
+  @IsOptional()
+  deviceTime?: Date;
+
+  @IsOptional()
+  @IsString()
+  source?: string;
 }

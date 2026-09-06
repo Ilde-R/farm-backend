@@ -59,6 +59,7 @@ export class IotRepository {
             freeHeap: true,
             readIntervalMs: true,
             scaleFactor: true,
+            saveIntervalSeconds: true,
           },
         },
       },
@@ -72,6 +73,7 @@ export class IotRepository {
         blowerConfig: {
           select: {
             tenantId: true,
+            blowerId: true,
           },
         },
       },
@@ -82,6 +84,33 @@ export class IotRepository {
     return this.prisma.deviceKey.update({
       where: { key },
       data: { isActive },
+    });
+  }
+
+  async findBlowerConfig(tenantId: string, blowerId: string) {
+    return this.prisma.blowerConfig.findUnique({
+      where: { tenantId_blowerId: { tenantId, blowerId } },
+    });
+  }
+
+  async updateBlowerConfig(
+    blowerConfigId: string,
+    data: { saveIntervalSeconds?: number; scaleFactor?: number },
+  ) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data,
+    });
+  }
+
+  async deleteBlowerConfig(blowerConfigId: string) {
+    await this.prisma.deviceKey.deleteMany({
+      where: { blowerConfigId },
+    });
+    return this.prisma.blowerConfig.delete({
+      where: {
+        id: blowerConfigId,
+      },
     });
   }
 }

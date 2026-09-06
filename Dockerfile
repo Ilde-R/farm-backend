@@ -1,17 +1,16 @@
-FROM node:22-alpine AS development
+FROM node:22-alpine AS build
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache openssl
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
-RUN npm install --ignore-scripts
+RUN npm ci --ignore-scripts
 RUN npx prisma generate
 
 COPY . .
 
-FROM development AS build
 RUN npm run build
 
 RUN npm prune --omit=dev
@@ -23,12 +22,8 @@ RUN apk add --no-cache openssl
 
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-COPY --from=build /usr/src/app/package*.json ./
-COPY --from=build /usr/src/app/prisma ./prisma
-COPY --from=build /usr/src/app/prisma.config.ts ./
-
 USER node
 
-EXPOSE 3000
+EXPOSE 8001
 
 CMD [ "node", "dist/src/main.js" ]

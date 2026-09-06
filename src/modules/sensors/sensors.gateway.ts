@@ -19,12 +19,12 @@ import { WsAuthGuard } from '../auth/guards/ws-auth.guard';
 import { IncomingMessage } from 'http';
 import { IotService } from '../iot/iot.service';
 import { JwtService } from '@nestjs/jwt';
-
-interface EnrichedClient {
-  tenantId: string;
-  blowerId?: string;
-  blowerConfigId?: string;
-}
+import { DeviceTimeService } from './services/device-time.service';
+import {
+  DeviceConnectionRegistry,
+  EnrichedClient,
+  UserAuth,
+} from '../../common/device-connection.registry';
 
 interface DeviceAuth {
   tenantId: string;
@@ -32,11 +32,6 @@ interface DeviceAuth {
   blowerConfigId: string;
   currentThreshold: number;
   deviceKey: string;
-}
-
-interface UserAuth {
-  tenantId: string;
-  sub: string;
 }
 
 function getClientInfo(client: WebSocket): EnrichedClient | undefined {
@@ -55,6 +50,8 @@ function getClientInfo(client: WebSocket): EnrichedClient | undefined {
   return undefined;
 }
 
+const DEVICE_REVALIDATION_INTERVAL_MS = 5 * 60 * 1000;
+
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
 export class SensorsGateway
@@ -65,15 +62,18 @@ export class SensorsGateway
   @WebSocketServer()
   server!: Server;
 
-  private connectedClients = new Map<WebSocket, EnrichedClient>();
   private heartbeatTimers = new Map<WebSocket, ReturnType<typeof setTimeout>>();
+  private revalidationTimers = new Map<
+    WebSocket,
+    ReturnType<typeof setInterval>
+  >();
 
   private ensureClientInfo(client: WebSocket): EnrichedClient | undefined {
-    let info = this.connectedClients.get(client);
+    let info = this.connectionRegistry.clients.get(client);
     if (!info) {
       info = getClientInfo(client);
       if (info) {
-        this.connectedClients.set(client, info);
+        this.connectionRegistry.register(client, info);
       }
     }
     return info;
@@ -83,32 +83,20 @@ export class SensorsGateway
     private readonly sensorsService: SensorsService,
     private readonly iotService: IotService,
     private readonly jwtService: JwtService,
+    private readonly deviceTimeService: DeviceTimeService,
+    private readonly connectionRegistry: DeviceConnectionRegistry,
   ) {}
 
-  private broadcastToUsers(tenantId: string, message: { event: string; data: any }, exclude?: WebSocket) {
-    for (const [c, info] of this.connectedClients) {
-      const userData = (c as unknown as { user?: UserAuth }).user;
-      if (
-        c !== exclude &&
-        c.readyState === WebSocket.OPEN &&
-        userData &&
-        userData.tenantId === tenantId
-      ) {
-        c.send(JSON.stringify(message));
-      }
-    }
+  private broadcastToUsers(
+    tenantId: string,
+    message: { event: string; data: any },
+    exclude?: WebSocket,
+  ) {
+    this.connectionRegistry.broadcastToUsers(tenantId, message, exclude);
   }
 
   private getOnlineDevices(tenantId: string) {
-    const seen = new Set<string>();
-    const devices: { blowerId: string; blowerConfigId: string }[] = [];
-    for (const [, info] of this.connectedClients) {
-      if (info.blowerId && info.tenantId === tenantId && !seen.has(info.blowerId)) {
-        seen.add(info.blowerId);
-        devices.push({ blowerId: info.blowerId, blowerConfigId: info.blowerConfigId! });
-      }
-    }
-    return devices;
+    return this.connectionRegistry.getOnlineDevices(tenantId);
   }
 
   afterInit(server: Server) {
@@ -137,6 +125,47 @@ export class SensorsGateway
     if (timer) {
       clearTimeout(timer);
       this.heartbeatTimers.delete(client);
+    }
+  }
+
+  /**
+   * Starts a periodic re-validation timer for device keys.
+   * Instead of validating on every message (1 query/message), we validate
+   * once on connection and then re-check every 5 minutes.
+   */
+  private startDeviceRevalidation(client: WebSocket) {
+    const device = (client as unknown as { device?: DeviceAuth }).device;
+    if (!device?.deviceKey) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const valid = await this.iotService.validateDeviceKey(device.deviceKey);
+        if (!valid) {
+          this.logger.warn(
+            `Device key revoked mid-session, closing connection`,
+          );
+          client.send(
+            JSON.stringify({
+              event: 'auth_error',
+              data: { reason: 'key_revoked' },
+            }),
+          );
+          client.close(4001, 'Device key revoked');
+          this.clearDeviceRevalidation(client);
+        }
+      } catch (e) {
+        this.logger.warn(`Device revalidation error: ${e}`);
+      }
+    }, DEVICE_REVALIDATION_INTERVAL_MS);
+
+    this.revalidationTimers.set(client, timer);
+  }
+
+  private clearDeviceRevalidation(client: WebSocket) {
+    const timer = this.revalidationTimers.get(client);
+    if (timer) {
+      clearInterval(timer);
+      this.revalidationTimers.delete(client);
     }
   }
 
@@ -184,7 +213,7 @@ export class SensorsGateway
 
     const info = getClientInfo(client);
     if (info) {
-      this.connectedClients.set(client, info);
+      this.connectionRegistry.register(client, info);
     }
 
     client.on('pong', () => {
@@ -193,6 +222,8 @@ export class SensorsGateway
     });
 
     this.startHeartbeat(client);
+    // Start periodic device key re-validation (every 5 min instead of every message)
+    this.startDeviceRevalidation(client);
 
     const device = (client as unknown as { device?: DeviceAuth }).device;
     const user = (client as unknown as { user?: UserAuth }).user;
@@ -200,20 +231,26 @@ export class SensorsGateway
     if (device) {
       this.broadcastToUsers(info!.tenantId, {
         event: 'device_online',
-        data: { blowerId: info!.blowerId, blowerConfigId: info!.blowerConfigId },
+        data: {
+          blowerId: info!.blowerId,
+          blowerConfigId: info!.blowerConfigId,
+        },
       });
 
       try {
-        const config = await this.sensorsService.getBlowerConfigById(info!.blowerConfigId!);
-        if (config && (config.readIntervalMs || config.scaleFactor)) {
-          client.send(JSON.stringify({
-            event: 'device_config_update',
-            data: {
-              blowerId: info!.blowerId,
-              readIntervalMs: config.readIntervalMs,
-              scaleFactor: config.scaleFactor,
-            },
-          }));
+        const config = await this.sensorsService.getBlowerConfigById(
+          info!.blowerConfigId!,
+        );
+        if (config && config.scaleFactor) {
+          client.send(
+            JSON.stringify({
+              event: 'device_config_update',
+              data: {
+                blowerId: info!.blowerId,
+                scaleFactor: config.scaleFactor,
+              },
+            }),
+          );
         }
       } catch (e) {
         this.logger.warn(`Failed to send device config on connect: ${e}`);
@@ -223,35 +260,41 @@ export class SensorsGateway
     if (user) {
       const onlineDevices = this.getOnlineDevices(user.tenantId);
       if (onlineDevices.length > 0) {
-        client.send(JSON.stringify({ event: 'devices_online', data: { devices: onlineDevices } }));
+        client.send(
+          JSON.stringify({
+            event: 'devices_online',
+            data: { devices: onlineDevices },
+          }),
+        );
       }
     }
   }
 
   handleDisconnect(client: WebSocket) {
     this.clearHeartbeat(client);
-    const info = this.connectedClients.get(client);
+    this.clearDeviceRevalidation(client);
+    const info = this.connectionRegistry.clients.get(client);
+
+    if (
+      info?.blowerConfigId &&
+      !this.connectionRegistry.hasConnectionForBlowerConfig(
+        info.blowerConfigId,
+        client,
+      )
+    ) {
+      this.deviceTimeService.clearDeviceInfo(info.blowerConfigId);
+    }
     if (info?.blowerId) {
-      this.broadcastToUsers(info.tenantId, {
-        event: 'device_offline',
-        data: { blowerId: info.blowerId },
-      }, client);
+      this.broadcastToUsers(
+        info.tenantId,
+        {
+          event: 'device_offline',
+          data: { blowerId: info.blowerId },
+        },
+        client,
+      );
     }
-    this.connectedClients.delete(client);
-  }
-
-  private async isDeviceActive(client: WebSocket): Promise<boolean> {
-    const device = (client as unknown as { device?: DeviceAuth }).device;
-    if (!device?.deviceKey) return true;
-
-    const valid = await this.iotService.validateDeviceKey(device.deviceKey);
-    if (!valid) {
-      this.logger.warn(`Device key revoked mid-session, closing connection`);
-      client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
-      client.close(4001, 'Device key revoked');
-      return false;
-    }
-    return true;
+    this.connectionRegistry.unregister(client);
   }
 
   @SubscribeMessage('register_blower')
@@ -260,14 +303,20 @@ export class SensorsGateway
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      if (!(await this.isDeviceActive(client))) return;
-
       const clientInfo = this.ensureClientInfo(client);
-      const tenantId = data.tenantId || clientInfo?.tenantId;
-      const blowerId = data.blowerId || clientInfo?.blowerId;
+      
+      if(!clientInfo?.tenantId) {
+        return {
+          status: 'error',
+          message: 'Cliente no autenticado, no se puede registrar blower',
+        };
+      }
+
+      const tenantId = clientInfo.tenantId;
+      const blowerId = clientInfo.blowerId ?? data.blowerId;
 
       if (!tenantId || !blowerId) {
-        return { status: 'error', message: 'tenantId and blowerId required' };
+        return { status: 'error', message: 'tenantId y blowerId requeridos' };
       }
 
       const config = await this.sensorsService.registerBlower(
@@ -304,19 +353,30 @@ export class SensorsGateway
       blowerId?: string;
       blowerConfigId?: string;
       tenantId?: string;
+      ts?: number;
     },
     @ConnectedSocket() client: WebSocket,
   ) {
     try {
-      if (!(await this.isDeviceActive(client))) return;
-
       const clientInfo = this.ensureClientInfo(client);
+
+      if (!clientInfo?.tenantId) {
+        return { status: 'error', message: 'Cliente no autenticado' };
+      }
 
       const enriched: CreateSensorDto = {
         psi: data.psi ?? 0,
-        blowerConfigId: data.blowerConfigId || clientInfo?.blowerConfigId,
-        tenantId: data.tenantId || clientInfo?.tenantId,
-        blowerId: data.blowerId || clientInfo?.blowerId,
+        blowerConfigId: clientInfo.blowerConfigId,
+        tenantId: clientInfo.tenantId,
+        blowerId: clientInfo.blowerId,
+        deviceTs: data.ts,
+        deviceTime:
+          data.ts !== undefined && clientInfo?.blowerConfigId
+            ? this.deviceTimeService.toRealTime(
+                clientInfo.blowerConfigId,
+                data.ts,
+              )
+            : undefined,
       };
 
       const dto = plainToInstance(CreateSensorDto, enriched);
@@ -342,8 +402,11 @@ export class SensorsGateway
 
       await this.sensorsService.createReading(enriched);
 
-      for (const [c, info] of this.connectedClients) {
-        if (c.readyState === WebSocket.OPEN && info.tenantId === enriched.tenantId) {
+      for (const [c, info] of this.connectionRegistry.clients) {
+        if (
+          c.readyState === WebSocket.OPEN &&
+          info.tenantId === enriched.tenantId
+        ) {
           c.send(
             JSON.stringify({
               event: 'pressure_reading',
@@ -354,7 +417,12 @@ export class SensorsGateway
       }
 
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ event: 'reading_ack', data: { ok: true, ts: Date.now() } }));
+        client.send(
+          JSON.stringify({
+            event: 'reading_ack',
+            data: { ok: true, ts: Date.now() },
+          }),
+        );
       }
 
       return { ok: true };
@@ -365,19 +433,85 @@ export class SensorsGateway
     }
   }
 
+  @SubscribeMessage('batch_readings')
+  async handleBatchReadings(
+    @MessageBody()
+    data: {
+      readings: { psi: number; ts?: number }[];
+    },
+    @ConnectedSocket() client: WebSocket,
+  ) {
+    try {
+      const clientInfo = this.ensureClientInfo(client);
+      if (!clientInfo?.blowerConfigId || !clientInfo?.tenantId) return;
+
+      // Use last reading, pass through createReading (respects saveIntervalSeconds throttle)
+      const last = data.readings[data.readings.length - 1];
+      if (last) {
+        await this.sensorsService.createReading({
+          psi: last.psi,
+          blowerId: clientInfo.blowerId,
+          blowerConfigId: clientInfo.blowerConfigId,
+          tenantId: clientInfo.tenantId,
+          deviceTs: last.ts,
+          deviceTime:
+            last.ts !== undefined
+              ? this.deviceTimeService.toRealTime(
+                  clientInfo.blowerConfigId,
+                  last.ts,
+                )
+              : undefined,
+        });
+
+        // Broadcast to user clients
+        for (const [c, info] of this.connectionRegistry.clients) {
+          if (
+            c.readyState === WebSocket.OPEN &&
+            info.tenantId === clientInfo.tenantId &&
+            !info.blowerId
+          ) {
+            c.send(
+              JSON.stringify({
+                event: 'pressure_reading',
+                data: {
+                  psi: last.psi,
+                  blowerId: clientInfo.blowerId,
+                  blowerConfigId: clientInfo.blowerConfigId,
+                  tenantId: clientInfo.tenantId,
+                  deviceTs: last.ts,
+                },
+              }),
+            );
+          }
+        }
+      }
+
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            event: 'batch_ack',
+            data: { ok: true, count: data.readings.length, ts: Date.now() },
+          }),
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Batch readings error: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
+  }
+
   @SubscribeMessage('set_new_threshold')
   async handleSetNewThreshold(
     @MessageBody() data: { blowerId?: string; threshold: number },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;
 
     if (!blowerId || !tenantId) {
-      return { status: 'error', message: 'blowerId required' };
+      return { status: 'error', message: 'blowerId requerido' };
     }
 
     await this.sensorsService.updateThreshold(
@@ -386,7 +520,7 @@ export class SensorsGateway
       data.threshold,
     );
 
-    for (const [c, info] of this.connectedClients) {
+    for (const [c, info] of this.connectionRegistry.clients) {
       if (c.readyState === WebSocket.OPEN && info.tenantId === tenantId) {
         c.send(
           JSON.stringify({
@@ -405,14 +539,12 @@ export class SensorsGateway
     @MessageBody() data: { blowerId?: string },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const tenantId = clientInfo?.tenantId;
     const blowerId = data?.blowerId || clientInfo?.blowerId;
 
     if (!tenantId) {
-      return { status: 'error', message: 'tenantId required' };
+      return { status: 'error', message: 'tenantId requerido' };
     }
 
     if (blowerId) {
@@ -445,8 +577,11 @@ export class SensorsGateway
     const senderInfo = this.ensureClientInfo(sender);
     if (!senderInfo) return;
 
-    for (const [client, info] of this.connectedClients) {
-      if (client.readyState === WebSocket.OPEN && info.tenantId === senderInfo.tenantId) {
+    for (const [client, info] of this.connectionRegistry.clients) {
+      if (
+        client.readyState === WebSocket.OPEN &&
+        info.tenantId === senderInfo.tenantId
+      ) {
         client.send(JSON.stringify({ event: 'current_threshold', data }));
       }
     }
@@ -463,21 +598,32 @@ export class SensorsGateway
     },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     if (!clientInfo?.blowerConfigId) return;
 
     try {
-      await this.sensorsService.updateDeviceMetadata(clientInfo.blowerConfigId, {
-        firmwareVersion: data.firmware,
-        wifiRssi: data.rssi,
-        uptimeMs: data.uptime === undefined ? undefined : BigInt(data.uptime),
-        freeHeap: data.heap,
-      });
+      await this.sensorsService.updateDeviceMetadata(
+        clientInfo.blowerConfigId,
+        {
+          firmwareVersion: data.firmware,
+          wifiRssi: data.rssi,
+          uptimeMs: data.uptime === undefined ? undefined : BigInt(data.uptime),
+          freeHeap: data.heap,
+        },
+      );
+
+      // Register boot time offset for device timestamp conversion
+      if (data.uptime !== undefined) {
+        this.deviceTimeService.registrarDeviceInfo(
+          clientInfo.blowerConfigId,
+          data.uptime * 1000,
+        );
+      }
 
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ event: 'device_info_ack', data: { ok: true } }));
+        client.send(
+          JSON.stringify({ event: 'device_info_ack', data: { ok: true } }),
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -491,19 +637,16 @@ export class SensorsGateway
     @MessageBody()
     data: {
       blowerId?: string;
-      readIntervalMs?: number;
       scaleFactor?: number;
     },
     @ConnectedSocket() client: WebSocket,
   ) {
-    if (!(await this.isDeviceActive(client))) return;
-
     const clientInfo = this.ensureClientInfo(client);
     const blowerId = data.blowerId || clientInfo?.blowerId;
     const tenantId = clientInfo?.tenantId;
 
     if (!blowerId || !tenantId) {
-      return { status: 'error', message: 'blowerId required' };
+      return { status: 'error', message: 'blowerId requerido' };
     }
 
     const config = await this.sensorsService.getBlowerConfigByTenantAndId(
@@ -511,34 +654,31 @@ export class SensorsGateway
       blowerId,
     );
     if (!config) {
-      return { status: 'error', message: 'BlowerConfig not found' };
+      return {
+        status: 'error',
+        message: 'Configuración del blower no encontrada',
+      };
     }
 
-    const update: { readIntervalMs?: number; scaleFactor?: number } = {};
-    if (data.readIntervalMs !== undefined) {
-      if (data.readIntervalMs < 500 || data.readIntervalMs > 60000) {
-        return { status: 'error', message: 'readIntervalMs must be 500-60000' };
-      }
-      update.readIntervalMs = data.readIntervalMs;
-    }
+    const update: { scaleFactor?: number } = {};
     if (data.scaleFactor !== undefined) {
       if (data.scaleFactor <= 0) {
-        return { status: 'error', message: 'scaleFactor must be > 0' };
+        return { status: 'error', message: 'scaleFactor debe ser > 0' };
       }
       update.scaleFactor = data.scaleFactor;
     }
 
     if (Object.keys(update).length === 0) {
-      return { status: 'error', message: 'No valid fields to update' };
+      return {
+        status: 'error',
+        message: 'No hay campos válidos para actualizar',
+      };
     }
 
     await this.sensorsService.updateDeviceConfig(config.id, update);
 
-    for (const [c, info] of this.connectedClients) {
-      if (
-        c.readyState === WebSocket.OPEN &&
-        info.tenantId === tenantId
-      ) {
+    for (const [c, info] of this.connectionRegistry.clients) {
+      if (c.readyState === WebSocket.OPEN && info.tenantId === tenantId) {
         c.send(
           JSON.stringify({
             event: 'device_config_update',
