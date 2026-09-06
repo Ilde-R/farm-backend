@@ -20,28 +20,29 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,
-      contentSecurityPolicy: fase //Borrarrrrrrr
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          'https://cdn.jsdelivr.net',
-          'https://cdn.scalar.com',
-        ],
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'",
-            'https://cdn.jsdelivr.net',
-            'https://fonts.googleapis.com',
-            'https://cdn.scalar.com',
-          ],
-          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-          imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: ["'self'", 'http://78.13.219.157:3000'],
-        },
-      },
+      crossOriginOpenerPolicy: false,
+      contentSecurityPolicy: false,
+      // {
+      //   directives: {
+      //     defaultSrc: ["'self'"],
+      //     scriptSrc: [
+      //     "'self'",
+      //     "'unsafe-inline'",
+      //     'https://cdn.jsdelivr.net',
+      //     'https://cdn.scalar.com',
+      //   ],
+      //     styleSrc: [
+      //       "'self'",
+      //       "'unsafe-inline'",
+      //       'https://cdn.jsdelivr.net',
+      //       'https://fonts.googleapis.com',
+      //       'https://cdn.scalar.com',
+      //     ],
+      //     fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      //     imgSrc: ["'self'", 'data:', 'https:'],
+      //     connectSrc: ["'self'", 'http://78.13.219.157:3000'],
+      //   },
+      // },
     }),
   );
 
