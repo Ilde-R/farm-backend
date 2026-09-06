@@ -45,6 +45,7 @@ async function bootstrap() {
     .setVersion('0.1.4')
     .addTag('granja')
     .addBearerAuth()
+    .addServer('http://78.13.219.157:3000')
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
