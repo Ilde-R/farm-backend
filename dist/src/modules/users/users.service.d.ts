@@ -8,22 +8,22 @@ export declare class UsersService extends BaseService<any, CreateUserDto, Update
     protected readonly userRepository: UserRepository;
     constructor(userRepository: UserRepository);
     findByTenant(tenantId: string): Promise<{
-        email: string;
-        username: string;
         id: string;
+        username: string;
+        email: string;
     }[]>;
     getProfile(userId: string): Promise<{
         tenantId: string | null;
-        email: string;
-        username: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        username: string;
+        email: string;
     }>;
     updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<{
-        email: string;
-        username: string;
         id: string;
+        username: string;
+        email: string;
     }>;
     changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{
         message: string;

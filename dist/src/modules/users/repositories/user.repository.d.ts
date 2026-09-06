@@ -7,32 +7,32 @@ export declare class UserRepository extends BaseRepository<User, CreateUserDto, 
     private readonly prisma;
     constructor(prisma: PrismaService);
     findByEmail(email: string): Promise<{
-        email: string;
-        username: string;
         id: string;
+        username: string;
+        email: string;
     } | null>;
     findByTenant(tenantId: string): Promise<{
-        email: string;
-        username: string;
         id: string;
+        username: string;
+        email: string;
     }[]>;
     findCredentialByUserId(userId: string): Promise<{
         id: string;
-        userId: string;
         password: string;
+        userId: string;
     } | null>;
     updateCredentialPassword(userId: string, hashedPassword: string): Promise<{
         id: string;
-        userId: string;
         password: string;
+        userId: string;
     }>;
     updateProfile(userId: string, data: {
         username?: string;
         email?: string;
     }): Promise<{
-        email: string;
-        username: string;
         id: string;
+        username: string;
+        email: string;
     }>;
     deleteUserWithTenant(userId: string): Promise<{
         deletedUserId: string;

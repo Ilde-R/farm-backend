@@ -17,7 +17,7 @@ export declare class IotController {
             name: string | null;
             firmwareVersion: string | null;
             wifiRssi: number | null;
-            uptimeMs: bigint | null;
+            uptimeMs: number | null;
             freeHeap: number | null;
             readIntervalMs: number | null;
             scaleFactor: number | null;
