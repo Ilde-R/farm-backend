@@ -10,6 +10,7 @@ import helmet from 'helmet';
 async function bootstrap() {
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
 
   app.enableCors({
     origin: '*',
@@ -60,7 +61,7 @@ async function bootstrap() {
     .setVersion('0.1.4')
     .addTag('granja')
     .addBearerAuth()
-    .addServer('http://78.13.219.157:3000')
+    .addServer('http://78.13.219.157:3000/api')
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
