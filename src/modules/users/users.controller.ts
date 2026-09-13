@@ -27,25 +27,22 @@ export class UsersController {
     @Req() req: RequestWithUser,
     @Query() pagination: PaginationQueryDto,
   ) {
-    return this.usersService.findAll({
-      ...pagination,
-      tenantId: req.user.tenantId,
-    });
+    return this.usersService.findAll(pagination, req.user.tenantId);
   }
 
   @Get('profile')
-  @ApiOperation({ summary: 'Ver perfil actual' })
+  @ApiOperation({ summary: 'Ver perfil' })
   async getProfile(@Req() req: RequestWithUser) {
-    return this.usersService.getProfile(req.user.sub);
+    return this.usersService.getProfile(req.user.sub, req.user.tenantId);
   }
 
   @Patch('profile')
   @ApiOperation({ summary: 'Actualizar perfil' })
   async updateProfile(
     @Req() req: RequestWithUser,
-    @Body() updateProflileDto: UpdateProfileDto,
+    @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    return this.usersService.updateProfile(req.user.sub, updateProflileDto);
+    return this.usersService.updateProfile(req.user.sub, updateProfileDto);
   }
 
   @Patch('password')

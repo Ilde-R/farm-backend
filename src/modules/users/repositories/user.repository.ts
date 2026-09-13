@@ -13,7 +13,7 @@ export class UserRepository extends BaseRepository<
   UpdateUserDto
 > {
   constructor(private readonly prisma: PrismaService) {
-    super(prisma.user, userSelect);
+    super(prisma.user, ['username', 'email'], userSelect);
   }
 
   async findByEmail(email: string) {
