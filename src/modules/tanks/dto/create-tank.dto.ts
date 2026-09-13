@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { TanksStatus } from "@prisma/client";
-import { IsNumber } from "class-validator";
+import { IsEnum, IsNumber } from "class-validator";
 
 export class CreateTankDto {
     @ApiProperty()
@@ -8,5 +8,6 @@ export class CreateTankDto {
     tankNumber!: number;
 
     @ApiProperty ({ enum: TanksStatus })
+    @IsEnum(TanksStatus)
     tankStatus!: TanksStatus;
 }

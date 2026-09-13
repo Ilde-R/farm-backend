@@ -14,8 +14,10 @@ import { CreateTankDto } from './dto/create-tank.dto';
 import { UpdateTankDto } from './dto/update-tank.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import type { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
+import { ApiBasicAuth, ApiTags } from '@nestjs/swagger';
 
-
+@ApiTags('Tanques')
+@ApiBasicAuth()
 @Controller('tanks')
 export class TanksController {
   constructor(private readonly tanksService: TanksService) {}
