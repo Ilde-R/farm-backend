@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SensorsModule } from './modules/sensors/sensors.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
@@ -27,6 +28,13 @@ import { TanksModule } from './modules/tanks/tanks.module';
           limit: 10,
         },
       ],
+    }),
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      verboseMemoryLeak: true,
+      delimiter: '.', 
+      ignoreErrors: false, 
+      maxListeners: 10,
     }),
     PrismaModule,
     CommonModule,
