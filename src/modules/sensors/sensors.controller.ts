@@ -13,7 +13,7 @@ import { SensorsService } from './sensors.service';
 import { ReadingChartQueryDto } from './dto/reading-chart-query.dto';
 import type { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 
-@ApiTags('Sensors')
+@ApiTags('Sensores')
 @ApiBearerAuth()
 @Controller('sensors')
 export class SensorsController {

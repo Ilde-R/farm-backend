@@ -3,6 +3,7 @@ import { PaginationQueryDto } from '../dto/pagination-query.dto';
 export abstract class BaseRepository<T, CreateDto, UpdateDto> {
   constructor(
     protected readonly model: any,
+    protected readonly searchFields: string[] = [],
     protected readonly defaultSelect?: any,
   ) {}
 
@@ -23,11 +24,10 @@ export abstract class BaseRepository<T, CreateDto, UpdateDto> {
       where.tenantId = tenantId;
     }
 
-    if (search) {
-      where.OR = [
-        { username: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
+    if (search && this.searchFields.length > 0) {
+      where.OR = this.searchFields.map((field) => ({
+        [field]: { contains: search, mode: 'insensitive' },
+      }));
     }
 
     const [items, total] = await Promise.all([
@@ -44,24 +44,24 @@ export abstract class BaseRepository<T, CreateDto, UpdateDto> {
     return { items, total };
   }
 
-  async findOne(id: string): Promise<T | null> {
+  async findOne(id: string, tenantId: string): Promise<T | null> {
     return this.model.findFirst({
-      where: { id },
+      where: { id, tenantId },
       select: this.defaultSelect,
     });
   }
 
-  async update(id: string, data: UpdateDto): Promise<T> {
-    return this.model.update({
-      where: { id },
+  async update(id: string, tenantId: string, data: UpdateDto): Promise<T> {
+    await this.model.updateMany({
+      where: { id, tenantId },
       data,
-      select: this.defaultSelect,
     });
+    return this.findOne(id, tenantId) as Promise<T>;
   }
 
-  async remove(id: string): Promise<T> {
-    return this.model.delete({
-      where: { id },
+  async remove(id: string, tenantId: string): Promise<void> {
+    await this.model.deleteMany({
+      where: { id, tenantId },
     });
   }
 }

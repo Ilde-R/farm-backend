@@ -27,8 +27,8 @@ export class UsersService extends BaseService<
     return this.userRepository.findByTenant(tenantId);
   }
 
-  async getProfile(userId: string) {
-    const user = await this.userRepository.findOne(userId);
+  async getProfile(userId: string, tenantId: string) {
+    const user = await this.userRepository.findOne(userId, tenantId);
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }

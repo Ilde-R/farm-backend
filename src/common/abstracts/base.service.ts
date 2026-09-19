@@ -4,30 +4,30 @@ import { PaginationQueryDto } from '../dto/pagination-query.dto';
 
 export abstract class BaseService<T, CreateDto, UpdateDto> {
   constructor(
-    protected readonly userRepository: BaseRepository<T, CreateDto, UpdateDto>,
+    protected readonly repository: BaseRepository<T, CreateDto, UpdateDto>,
   ) {}
 
-  async create(createDto: CreateDto): Promise<T> {
-    return this.userRepository.create(createDto);
+  async create(createDto: CreateDto, tenantId: string): Promise<T> {
+    return this.repository.create({ ...createDto, tenantId } as unknown as CreateDto);
   }
 
-  async findAll(pagination: PaginationQueryDto) {
-    return this.userRepository.findAll(pagination);
+  async findAll(pagination: PaginationQueryDto, tenantId: string) {
+    return this.repository.findAll({ ...pagination, tenantId });
   }
 
-  async findOne(id: string): Promise<T> {
-    const record = await this.userRepository.findOne(id);
+  async findOne(id: string, tenantId: string): Promise<T> {
+    const record = await this.repository.findOne(id, tenantId);
 
     if (!record) {
-      throw new NotFoundException();
+      throw new NotFoundException('Registro no encontrado o no autorizado');
     }
 
     return record;
   }
 
-  async update(id: string, updateDto: UpdateDto): Promise<T> {
+  async update(id: string, updateDto: UpdateDto, tenantId: string): Promise<T> {
     try {
-      return await this.userRepository.update(id, updateDto);
+      return await this.repository.update(id, tenantId, updateDto);
     } catch (error: any) {
       if (error?.code === 'P2025') {
         throw new NotFoundException();
@@ -36,12 +36,13 @@ export abstract class BaseService<T, CreateDto, UpdateDto> {
     }
   }
 
-  async remove(id: string): Promise<T> {
+  async remove(id: string, tenantId: string): Promise<void> {
     try {
-      return await this.userRepository.remove(id);
+      await this.findOne(id, tenantId);
+      await this.repository.remove(id, tenantId);
     } catch (error: any) {
       if (error?.code === 'P2025') {
-        throw new NotFoundException();
+        throw new NotFoundException('Registro no encontrado o no autorizado');
       }
       throw error;
     }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SensorsModule } from './modules/sensors/sensors.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
@@ -13,6 +14,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TanksModule } from './modules/tanks/tanks.module';
 
 @Module({
   imports: [
@@ -27,12 +29,20 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
         },
       ],
     }),
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      verboseMemoryLeak: true,
+      delimiter: '.', 
+      ignoreErrors: false, 
+      maxListeners: 10,
+    }),
     PrismaModule,
     CommonModule,
     SensorsModule,
     AuthModule,
     UsersModule,
     IotModule,
+    TanksModule,
   ],
   controllers: [],
   providers: [

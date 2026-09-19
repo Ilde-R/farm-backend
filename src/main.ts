@@ -10,6 +10,7 @@ import helmet from 'helmet';
 async function bootstrap() {
   const logger = new Logger('Main');
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
 
   app.enableCors({
     origin: '*',
@@ -20,21 +21,19 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'",
-            'https://cdn.jsdelivr.net',
-            'https://fonts.googleapis.com',
-          ],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdn.scalar.com'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com', 'https://cdn.scalar.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", 'http://78.13.219.157:3000'], 
+          upgradeInsecureRequests: null,
         },
       },
-    }),
+    })
   );
 
   app.useGlobalPipes(
@@ -51,7 +50,7 @@ async function bootstrap() {
     .setVersion('0.1.4')
     .addTag('granja')
     .addBearerAuth()
-    .addServer('http://78.13.219.157:3000')
+    // .addServer('http://78.13.219.157:3000')
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
