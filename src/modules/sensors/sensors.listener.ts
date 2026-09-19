@@ -18,6 +18,7 @@ export class SensorsEventListener {
 
   @OnEvent('device.reading_received')
   async processReading(payload: { data: any; clientInfo: any }) {
+
     const { data, clientInfo } = payload;
 
     try {
