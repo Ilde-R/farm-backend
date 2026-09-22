@@ -391,9 +391,17 @@ export class AerationsService
       );
       return null;
     }
-    return this.aerationsRepository.updateConfig(config.id, {
+    
+    const updated = await this.aerationsRepository.updateConfig(config.id, {
       currentThreshold: threshold,
     });
+
+    this.connectionRegistry.sendToDevice(blowerId, {
+      event: 'update_threshold',
+      data: { blowerId, threshold },
+    });
+
+    return updated;
   }
 
   async getAllThresholds(
