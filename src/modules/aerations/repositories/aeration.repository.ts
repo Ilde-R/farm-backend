@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '../../../common/abstracts/base.repository';
-import { CreateSensorDto } from '../dto/create-sensor.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, PressureReading } from '@prisma/client';
+import { IngestReadingDto } from '../dto/ingest-reading.dto';
 
 @Injectable()
-export class SensorsRepository extends BaseRepository<
+export class AerationsRepository extends BaseRepository<
   PressureReading,
-  CreateSensorDto,
+  IngestReadingDto,
   Partial<PressureReading>
 > {
   constructor(private readonly prisma: PrismaService) {
@@ -17,39 +17,37 @@ export class SensorsRepository extends BaseRepository<
   async upsertBlowerConfig(
     tenantId: string,
     blowerId: string,
-    currentThreshold?: number,
+    options?: {
+      currentThreshold?: number;
+      name?: string;
+    },
   ) {
     return this.prisma.blowerConfig.upsert({
       where: {
-        tenantId_blowerId: {
-          tenantId,
-          blowerId,
-        },
+        tenantId_blowerId: { tenantId, blowerId },
       },
-      update: {},
+      update: {
+        ...(options?.name !== undefined ? { name: options.name } : {}),
+        ...(options?.currentThreshold !== undefined ? { currentThreshold: options.currentThreshold } : {}),
+      },
       create: {
         blowerId,
         tenant: { connect: { id: tenantId } },
-        currentThreshold: currentThreshold ?? 2.0,
+        currentThreshold: options?.currentThreshold ?? 2.0,
+        name: options?.name ?? `Soplador ${blowerId}`,
       },
     });
   }
 
-  async updateBlowerThreshold(blowerConfigId: string, threshold: number) {
-    return this.prisma.blowerConfig.update({
-      where: { id: blowerConfigId },
-      data: { currentThreshold: threshold },
-    });
-  }
-
-  async getBlowerConfig(tenantId: string, blowerId: string) {
+  async findBlowerConfig(tenantId: string, blowerId: string) {
     return this.prisma.blowerConfig.findUnique({
-      where: {
-        tenantId_blowerId: {
-          tenantId,
-          blowerId,
-        },
-      },
+      where: { tenantId_blowerId: { tenantId, blowerId } },
+    });
+  }
+
+  async getBlowerConfigById(blowerConfigId: string) {
+    return this.prisma.blowerConfig.findUnique({
+      where: { id: blowerConfigId },
     });
   }
 
@@ -63,31 +61,11 @@ export class SensorsRepository extends BaseRepository<
     return this.prisma.blowerConfig.findMany({ where: { tenantId } });
   }
 
-  async updateDeviceMetadata(
+  async updateConfig(
     blowerConfigId: string,
     data: {
-      firmwareVersion?: string;
-      wifiRssi?: number;
-      uptimeMs?: number;
-      freeHeap?: number;
-    },
-  ) {
-    const updateData: Prisma.BlowerConfigUpdateInput = {
-      firmwareVersion: data.firmwareVersion,
-      wifiRssi: data.wifiRssi,
-      uptimeMs: data.uptimeMs,
-      freeHeap: data.freeHeap,
-    };
-
-    return this.prisma.blowerConfig.update({
-      where: { id: blowerConfigId },
-      data: updateData,
-    });
-  }
-
-  async updateDeviceConfig(
-    blowerConfigId: string,
-    data: {
+      currentThreshold?: number;
+      saveIntervalSeconds?: number;
       readIntervalMs?: number;
       scaleFactor?: number;
     },
@@ -98,9 +76,54 @@ export class SensorsRepository extends BaseRepository<
     });
   }
 
-  async getBlowerConfigById(blowerConfigId: string) {
-    return this.prisma.blowerConfig.findUnique({
+  async deleteBlowerConfig(blowerConfigId: string) {
+    await this.prisma.deviceKey.deleteMany({
+      where: { blowerConfigId },
+    });
+    return this.prisma.blowerConfig.delete({
       where: { id: blowerConfigId },
+    });
+  }
+
+  async createKey(key: string, blowerConfigId: string) {
+    return this.prisma.deviceKey.create({
+      data: { key, blowerConfig: { connect: { id: blowerConfigId } } },
+    });
+  }
+
+  async findDeviceKey(key: string) {
+    return this.prisma.deviceKey.findUnique({
+      where: { key },
+      include: { blowerConfig: true },
+    });
+  }
+
+  async findKeysByTenant(tenantId: string) {
+    return this.prisma.deviceKey.findMany({
+      where: { blowerConfig: { tenantId } },
+      include: { blowerConfig: true },
+    });
+  }
+
+  async updateKeyActive(key: string, isActive: boolean) {
+    return this.prisma.deviceKey.update({
+      where: { key },
+      data: { isActive },
+    });
+  }
+
+  async updateDeviceMetadata(
+    blowerConfigId: string,
+    data: {
+      firmwareVersion?: string;
+      wifiRssi?: number;
+      uptimeMs?: number;
+      freeHeap?: number;
+    },
+  ) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data,
     });
   }
 
@@ -121,33 +144,6 @@ export class SensorsRepository extends BaseRepository<
         ...(deviceTime !== undefined ? { deviceTime } : {}),
         ...(source !== undefined ? { source } : {}),
       },
-    });
-  }
-
-  async getAlertState(blowerConfigId: string) {
-    const config = await this.prisma.blowerConfig.findUnique({
-      where: {
-        id: blowerConfigId,
-      },
-      select: {
-        lastSaveAt: true,
-        lastAlertState: true,
-      },
-    });
-    return {
-      lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
-      lastAlertState: config?.lastAlertState ?? false,
-    };
-  }
-
-  async updateAlertState(
-    blowerConfigId: string,
-    lastSaveAt: Date,
-    lastAlertState: boolean,
-  ) {
-    return this.prisma.blowerConfig.update({
-      where: { id: blowerConfigId },
-      data: { lastSaveAt, lastAlertState },
     });
   }
 
@@ -173,6 +169,31 @@ export class SensorsRepository extends BaseRepository<
         ...(r.deviceTime !== undefined ? { deviceTime: r.deviceTime } : {}),
         ...(r.source !== undefined ? { source: r.source } : {}),
       })),
+    });
+  }
+
+  async getAlertState(blowerConfigId: string) {
+    const config = await this.prisma.blowerConfig.findUnique({
+      where: { id: blowerConfigId },
+      select: {
+        lastSaveAt: true,
+        lastAlertState: true,
+      },
+    });
+    return {
+      lastSaveAt: config?.lastSaveAt?.getTime() ?? 0,
+      lastAlertState: config?.lastAlertState ?? false,
+    };
+  }
+
+  async updateAlertState(
+    blowerConfigId: string,
+    lastSaveAt: Date,
+    lastAlertState: boolean,
+  ) {
+    return this.prisma.blowerConfig.update({
+      where: { id: blowerConfigId },
+      data: { lastSaveAt, lastAlertState },
     });
   }
 
@@ -206,9 +227,7 @@ export class SensorsRepository extends BaseRepository<
           },
         },
       },
-      orderBy: {
-        createdAt: 'asc',
-      },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

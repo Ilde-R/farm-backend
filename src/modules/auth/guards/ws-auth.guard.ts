@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/commo
 import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { IncomingMessage } from 'http';
-import { IotService } from '../../iot/iot.service';
+import { AerationsService } from '../../aerations/services/aeration.service';
 
 export interface WsClientData {
   user?: { sub: string; email: string; tenantId: string };
@@ -21,7 +21,7 @@ export class WsAuthGuard implements CanActivate {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly iotService: IotService,
+    private readonly aerationsService: AerationsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -47,7 +47,7 @@ export class WsAuthGuard implements CanActivate {
     }
 
     if (deviceKey) {
-      const device = await this.iotService.validateDeviceKey(deviceKey);
+      const device = await this.aerationsService.validateDeviceKey(deviceKey);
       if (!device) {
         this.logger.warn(`Device key inválido`);
         throw new WsException('Device key inválido o inactivo');

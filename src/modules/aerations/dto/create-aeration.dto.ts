@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
-export class ProvisionDto {
+export class CreateAerationDto {
   @ApiProperty({ description: 'Identificador del blower dentro del tenant' })
   @IsNotEmpty()
   @IsString()

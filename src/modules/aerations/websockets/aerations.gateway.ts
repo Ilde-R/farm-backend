@@ -5,17 +5,17 @@ import WebSocket from 'ws';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { WsConnectionManager } from './ws-connection.manager';
 import { WsAuthGuard } from '../../auth/guards/ws-auth.guard';
-import { SensorsService } from '../sensors.service';
+import { AerationsService } from '../services/aeration.service';
 
 @UseGuards(WsAuthGuard)
 @WebSocketGateway()
-export class SensorsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class AerationsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
   constructor(
     private readonly wsManager: WsConnectionManager,
-    private readonly sensorsService: SensorsService,
+    private readonly aerationsService: AerationsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -58,7 +58,7 @@ export class SensorsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     
     if (!blowerId || !clientInfo?.tenantId) return { status: 'error', message: 'blowerId requerido' };
 
-    await this.sensorsService.updateThreshold(clientInfo.tenantId, blowerId, data.threshold);
+    await this.aerationsService.updateThreshold(clientInfo.tenantId, blowerId, data.threshold);
 
     this.wsManager.registry.broadcastToUsers(clientInfo.tenantId, {
       event: 'update_threshold',
@@ -74,7 +74,7 @@ export class SensorsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     if (!clientInfo?.tenantId) return { status: 'error', message: 'Not authenticated' };
 
     const blowerId = clientInfo.blowerId ?? data.blowerId;
-    const config = await this.sensorsService.registerBlower(clientInfo.tenantId, blowerId);
+    const config = await this.aerationsService.registerBlower(clientInfo.tenantId, blowerId);
 
     if (clientInfo) {
       clientInfo.blowerConfigId = config.id;

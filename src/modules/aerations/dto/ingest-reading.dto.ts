@@ -1,6 +1,6 @@
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateSensorDto {
+export class IngestReadingDto {
   @IsNumber()
   psi!: number;
 

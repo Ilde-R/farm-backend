@@ -3,10 +3,9 @@ import { Server } from 'ws';
 import WebSocket from 'ws';
 import { IncomingMessage } from 'http';
 import { JwtService } from '@nestjs/jwt';
-import { IotService } from '../../iot/iot.service';
 import { DeviceTimeService } from '../services/device-time.service';
 import { DeviceConnectionRegistry, EnrichedClient, UserAuth } from '../../../common/device-connection.registry';
-import { SensorsService } from '../sensors.service';
+import { AerationsService } from '../services/aeration.service';
 
 interface DeviceAuth {
   tenantId: string;
@@ -25,9 +24,8 @@ export class WsConnectionManager {
 
   constructor(
     public readonly registry: DeviceConnectionRegistry,
-    private readonly iotService: IotService,
     private readonly jwtService: JwtService,
-    private readonly sensorsService: SensorsService,
+    private readonly aerationsService: AerationsService,
     private readonly deviceTimeService: DeviceTimeService,
   ) {}
 
@@ -57,7 +55,7 @@ export class WsConnectionManager {
         const deviceKey = (url.searchParams.get('key') || req.headers['key']) as string;
 
         if (deviceKey) {
-          const device = await this.iotService.validateDeviceKey(deviceKey);
+          const device = await this.aerationsService.validateDeviceKey(deviceKey);
           if (device) {
             (client as any).device = { ...device, deviceKey };
           } else {
@@ -89,7 +87,7 @@ export class WsConnectionManager {
     const device = (client as any).device;
     if (device && info?.blowerConfigId) {
       this.registry.broadcastToUsers(info.tenantId, { event: 'device_online', data: { blowerId: info.blowerId, blowerConfigId: info.blowerConfigId } });
-      const config = await this.sensorsService.getBlowerConfigById(info.blowerConfigId);
+      const config = await this.aerationsService.getBlowerConfigById(info.blowerConfigId);
       if (config?.scaleFactor) client.send(JSON.stringify({ event: 'device_config_update', data: { blowerId: info.blowerId, scaleFactor: config.scaleFactor } }));
     }
   }
@@ -119,7 +117,7 @@ export class WsConnectionManager {
     if (!deviceKey) return;
 
     this.revalidationTimers.set(client, setInterval(async () => {
-      const valid = await this.iotService.validateDeviceKey(deviceKey);
+      const valid = await this.aerationsService.validateDeviceKey(deviceKey);
       if (!valid) {
         client.send(JSON.stringify({ event: 'auth_error', data: { reason: 'key_revoked' } }));
         client.close(4001, 'Device key revoked');

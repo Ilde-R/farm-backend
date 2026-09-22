@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { SensorsModule } from './modules/sensors/sensors.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { IotModule } from './modules/iot/iot.module';
 import { CommonModule } from './common/common.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -15,6 +13,7 @@ import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exce
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TanksModule } from './modules/tanks/tanks.module';
+import { AerationsModule } from './modules/aerations/aerations.module';
 
 @Module({
   imports: [
@@ -38,10 +37,9 @@ import { TanksModule } from './modules/tanks/tanks.module';
     }),
     PrismaModule,
     CommonModule,
-    SensorsModule,
+    AerationsModule,
     AuthModule,
     UsersModule,
-    IotModule,
     TanksModule,
   ],
   controllers: [],
