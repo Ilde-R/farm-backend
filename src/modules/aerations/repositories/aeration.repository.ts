@@ -41,8 +41,9 @@ export class AerationsRepository extends BaseRepository<
 
   async findBlowerConfig(tenantId: string, blowerId: string) {
     return this.prisma.blowerConfig.findUnique({
-      where: { tenantId_blowerId: { tenantId, blowerId } },
-    });
+      where: { 
+        tenantId_blowerId: { tenantId, blowerId } },
+    })
   }
 
   async getBlowerConfigById(blowerConfigId: string) {

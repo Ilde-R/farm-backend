@@ -14,4 +14,16 @@ export class TankRepository extends BaseRepository<
     constructor(private readonly prisma: PrismaService){
         super(prisma.tank)
     }
+
+    async findByTankNumber(tenantId: string, tankNumber: number){
+        return this.prisma.tank.findFirst({
+            where: {
+                tenantId: tenantId,
+                tankNumber: tankNumber
+            },
+            select: {
+                tankNumber: true
+            }
+        })
+    }
 }

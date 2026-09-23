@@ -73,10 +73,6 @@ export class AerationsService
     );
   }
 
-  // ==========================================
-  // 1. GESTIÓN DE LLAVES Y DISPOSITIVOS (REST)
-  // ==========================================
-
   async provision(tenantId: string, createAerationDto: CreateAerationDto) {
     if (!tenantId) {
       throw new BadRequestException('Token no valido');
@@ -208,10 +204,6 @@ export class AerationsService
 
     return { message: `Blower ${blowerId} eliminado correctamente` };
   }
-
-  // ==========================================
-  // 2. HARDWARE, BUFFER Y TELEMETRÍA (IoT)
-  // ==========================================
 
   async registerBlower(tenantId: string, blowerId: string) {
     return this.aerationsRepository.upsertBlowerConfig(tenantId, blowerId);
@@ -358,10 +350,6 @@ export class AerationsService
       this.readingBuffer.unshift(...batch);
     }
   }
-
-  // ==========================================
-  // 3. CONSULTAS Y GRÁFICAS (REST)
-  // ==========================================
 
   async getLatestThreshold(
     tenantId: string,
