@@ -61,7 +61,7 @@ export class AerationsController {
   }
 
   @Patch('blowers/:blowerId/config')
-  @ApiOperation({ summary: 'Configurar intervalo de guardado de un blower' })
+  @ApiOperation({ summary: 'Configurar intervalo y valor escala' })
   async updateBlowerConfig(
     @Param('blowerId') blowerId: string,
     @Body() dto: UpdateBlowerConfigDto,

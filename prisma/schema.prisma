@@ -76,14 +76,14 @@ model BlowerConfig {
   
   blowerId String
   name String? 
-  currentThreshold Float @default(2.0)
+  currentThreshold Float @default(1.2)
 
   firmwareVersion String?
   wifiRssi        Int?
   uptimeMs        Int?
   freeHeap        Int?
   readIntervalMs  Int?    @default(1000)
-  scaleFactor     Float?  @default(250000.0)
+  scaleFactor     Float?  @default(0.8095)
   saveIntervalSeconds Int @default(10800)
   lastSaveAt DateTime? @db.Timestamptz(3)
   lastAlertState Boolean @default(false)

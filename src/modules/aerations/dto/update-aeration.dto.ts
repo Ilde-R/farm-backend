@@ -13,11 +13,11 @@ export class UpdateBlowerConfigDto {
   saveIntervalSeconds?: number;
 
   @ApiPropertyOptional({
-    example: 250000.0,
-    description: 'Factor de escala del sensor (debe ser > 0)',
+    example: 0.8095,
+    description: 'Factor de escala del sensor',
   })
   @IsOptional()
   @IsNumber()
-  @Min(1)
+  @Min(0.0000)
   scaleFactor?: number;
 }
