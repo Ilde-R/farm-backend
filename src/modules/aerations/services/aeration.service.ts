@@ -162,7 +162,14 @@ export class AerationsService
       throw new ForbiddenException(`Blower no pertenece a este tenant`);
     }
 
-    const update: { saveIntervalSeconds?: number; scaleFactor?: number } = {};
+    const update: {
+      currentThreshold?: number;
+      saveIntervalSeconds?: number;
+      scaleFactor?: number;
+    } = {};
+    if (dto.currentThreshold !== undefined) {
+      update.currentThreshold = dto.currentThreshold;
+    }
     if (dto.saveIntervalSeconds !== undefined) {
       update.saveIntervalSeconds = dto.saveIntervalSeconds;
     }
@@ -170,15 +177,42 @@ export class AerationsService
       update.scaleFactor = dto.scaleFactor;
     }
 
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException(
+        'Debe enviar al menos un campo de configuración',
+      );
+    }
+
     const updated = await this.aerationsRepository.updateConfig(
       blower.id,
       update,
     );
 
+    if (update.currentThreshold !== undefined) {
+      this.connectionRegistry.sendToDevice(blowerId, {
+        event: 'update_threshold',
+        data: { blowerId, threshold: update.currentThreshold },
+      });
+    }
+
+    const deviceConfig: {
+      blowerId: string;
+      scaleFactor?: number;
+      saveIntervalSeconds?: number;
+    } = { blowerId };
     if (update.scaleFactor !== undefined) {
+      deviceConfig.scaleFactor = updated.scaleFactor ?? update.scaleFactor;
+    }
+    if (update.saveIntervalSeconds !== undefined) {
+      deviceConfig.saveIntervalSeconds = updated.saveIntervalSeconds;
+    }
+    if (
+      update.scaleFactor !== undefined ||
+      update.saveIntervalSeconds !== undefined
+    ) {
       this.connectionRegistry.sendToDevice(blowerId, {
         event: 'device_config_update',
-        data: { blowerId, scaleFactor: update.scaleFactor },
+        data: deviceConfig,
       });
     }
 
@@ -258,26 +292,28 @@ export class AerationsService
       return null;
     }
 
-    const currentThreshold = ingetReadingDto.currentThreshold ?? 2.0;
-    const isAlert = ingetReadingDto.psi <= currentThreshold;
-
-    if (ingetReadingDto.currentThreshold !== undefined) {
-      await this.aerationsRepository.updateConfig(ingetReadingDto.blowerConfigId, {
-        currentThreshold: ingetReadingDto.currentThreshold,
-      });
+    const config = await this.aerationsRepository.getBlowerConfigById(
+      ingetReadingDto.blowerConfigId,
+    );
+    if (!config) {
+      throw new NotFoundException(
+        `BlowerConfig ${ingetReadingDto.blowerConfigId} no encontrado`,
+      );
+    }
+    if (config.tenantId !== ingetReadingDto.tenantId) {
+      throw new ForbiddenException(
+        `BlowerConfig ${ingetReadingDto.blowerConfigId} no pertenece a este tenant`,
+      );
     }
 
+    const isAlert = ingetReadingDto.psi <= config.currentThreshold;
     const { lastSaveAt, lastAlertState } = await this.getCachedAlertState(
       ingetReadingDto.blowerConfigId,
     );
 
     const now = Date.now();
     const alertChanged = isAlert !== lastAlertState;
-
-    const config = await this.aerationsRepository.getBlowerConfigById(
-      ingetReadingDto.blowerConfigId,
-    );
-    const saveIntervalMs = (config?.saveIntervalSeconds ?? 1800) * 1000;
+    const saveIntervalMs = config.saveIntervalSeconds * 1000;
 
     if (alertChanged) {
       await this.flushReadingBuffer();
@@ -369,6 +405,12 @@ export class AerationsService
   }
 
   async updateThreshold(tenantId: string, blowerId: string, threshold: number) {
+    if (!Number.isFinite(threshold) || threshold < 0) {
+      throw new BadRequestException(
+        'El umbral debe ser un número válido no negativo',
+      );
+    }
+
     const config = await this.aerationsRepository.findBlowerConfig(
       tenantId,
       blowerId,

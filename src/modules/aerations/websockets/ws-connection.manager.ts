@@ -86,9 +86,28 @@ export class WsConnectionManager {
 
     const device = (client as any).device;
     if (device && info?.blowerConfigId) {
-      this.registry.broadcastToUsers(info.tenantId, { event: 'device_online', data: { blowerId: info.blowerId, blowerConfigId: info.blowerConfigId } });
+      this.registry.broadcastToUsers(info.tenantId, {
+        event: 'device_online',
+        data: {
+          blowerId: info.blowerId,
+          blowerConfigId: info.blowerConfigId,
+        },
+      });
       const config = await this.aerationsService.getBlowerConfigById(info.blowerConfigId);
-      if (config?.scaleFactor) client.send(JSON.stringify({ event: 'device_config_update', data: { blowerId: info.blowerId, scaleFactor: config.scaleFactor } }));
+      if (config) {
+        client.send(JSON.stringify({
+          event: 'device_config_update',
+          data: {
+            blowerId: info.blowerId,
+            ...(config.scaleFactor !== null ? { scaleFactor: config.scaleFactor } : {}),
+            saveIntervalSeconds: config.saveIntervalSeconds,
+          },
+        }));
+        client.send(JSON.stringify({
+          event: 'update_threshold',
+          data: { blowerId: info.blowerId, threshold: config.currentThreshold },
+        }));
+      }
     }
   }
 

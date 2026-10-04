@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AerationService } from './aeration.service';
+import { AerationsService } from './aeration.service';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { DeviceConnectionRegistry } from '../../../common/device-connection.registry';
 import {
@@ -10,13 +10,19 @@ import {
 import { AerationsRepository } from '../repositories/aeration.repository';
 
 describe('AerationService', () => {
-  let service: AerationService;
+  let service: AerationsService;
   let repository: {
     upsertBlowerConfig: jest.Mock;
     createKey: jest.Mock;
     findDeviceKey: jest.Mock;
     findKeysByTenant: jest.Mock;
     updateKeyActive: jest.Mock;
+    findBlowerConfig: jest.Mock;
+    updateConfig: jest.Mock;
+    getBlowerConfigById: jest.Mock;
+    getAlertState: jest.Mock;
+    updateAlertState: jest.Mock;
+    createReading: jest.Mock;
   };
   let connectionRegistry: {
     closeByBlowerId: jest.Mock;
@@ -24,16 +30,20 @@ describe('AerationService', () => {
   };
 
   beforeEach(async () => {
-    // 1. Inicializamos los mocks actualizados del repositorio
     repository = {
       upsertBlowerConfig: jest.fn(),
       createKey: jest.fn(),
       findDeviceKey: jest.fn(),
       findKeysByTenant: jest.fn(),
       updateKeyActive: jest.fn(),
+      findBlowerConfig: jest.fn(),
+      updateConfig: jest.fn(),
+      getBlowerConfigById: jest.fn(),
+      getAlertState: jest.fn(),
+      updateAlertState: jest.fn(),
+      createReading: jest.fn(),
     };
 
-    // 2. Inicializamos el mock del registro de conexiones (WebSockets)
     connectionRegistry = {
       closeByBlowerId: jest.fn(),
       sendToDevice: jest.fn(),
@@ -41,14 +51,14 @@ describe('AerationService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AerationService,
+        AerationsService,
         { provide: PrismaService, useValue: {} },
         { provide: AerationsRepository, useValue: repository },
         { provide: DeviceConnectionRegistry, useValue: connectionRegistry },
       ],
     }).compile();
 
-    service = module.get(AerationService);
+    service = module.get(AerationsService);
   });
 
   describe('provision', () => {
@@ -92,7 +102,6 @@ describe('AerationService', () => {
         blowerName: 'Blower Sala',
       });
 
-      // Validamos que se pase como { name: 'Blower Sala' } según el nuevo contrato
       expect(repository.upsertBlowerConfig).toHaveBeenCalledWith(
         'tenant-1',
         'blwr-1',
@@ -166,7 +175,6 @@ describe('AerationService', () => {
   });
 
   describe('listDeviceKeys', () => {
-    // Si tienes este método en tu servicio, la prueba seguirá funcionando
     it('debería retornar las keys del tenant', async () => {
       const mockKeys = [
         { key: 'blwr_1', blowerConfig: { blowerId: 'b1' } },
@@ -174,12 +182,181 @@ describe('AerationService', () => {
       ];
       repository.findKeysByTenant.mockResolvedValue(mockKeys);
 
-      // Asumiendo que listDeviceKeys existe en AerationService
       if (service['listDeviceKeys']) {
         const result = await (service as any).listDeviceKeys('tenant-1');
         expect(result).toEqual(mockKeys);
         expect(repository.findKeysByTenant).toHaveBeenCalledWith('tenant-1');
       }
+    });
+  });
+
+  describe('updateBlowerConfig', () => {
+    const blower = {
+      id: 'config-1',
+      tenantId: 'tenant-1',
+      blowerId: 'blower-1',
+    };
+
+    beforeEach(() => {
+      repository.findBlowerConfig.mockResolvedValue(blower);
+      repository.updateConfig.mockImplementation(async (_id, data) => ({
+        ...blower,
+        currentThreshold: data.currentThreshold ?? 2.0,
+        saveIntervalSeconds: data.saveIntervalSeconds ?? 3600,
+        scaleFactor: 0.8095,
+      }));
+    });
+
+    it('guarda y devuelve el umbral persistido sin actualizar otros campos', async () => {
+      const result = await service.updateBlowerConfig('tenant-1', 'blower-1', {
+        currentThreshold: 2.5,
+      });
+
+      expect(repository.updateConfig).toHaveBeenCalledWith('config-1', {
+        currentThreshold: 2.5,
+      });
+      expect(connectionRegistry.sendToDevice).toHaveBeenCalledWith('blower-1', {
+        event: 'update_threshold',
+        data: { blowerId: 'blower-1', threshold: 2.5 },
+      });
+      expect(result).toEqual(
+        expect.objectContaining({ currentThreshold: 2.5 }),
+      );
+    });
+
+    it('guarda solo el intervalo y conserva el umbral existente', async () => {
+      const result = await service.updateBlowerConfig('tenant-1', 'blower-1', {
+        saveIntervalSeconds: 3600,
+      });
+
+      expect(repository.updateConfig).toHaveBeenCalledWith('config-1', {
+        saveIntervalSeconds: 3600,
+      });
+      expect(connectionRegistry.sendToDevice).toHaveBeenCalledWith('blower-1', {
+        event: 'device_config_update',
+        data: { blowerId: 'blower-1', saveIntervalSeconds: 3600 },
+      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          currentThreshold: 2.0,
+          saveIntervalSeconds: 3600,
+        }),
+      );
+    });
+
+    it('rechaza la actualización si el blower no pertenece al tenant', async () => {
+      repository.findBlowerConfig.mockResolvedValue({
+        ...blower,
+        tenantId: 'another-tenant',
+      });
+
+      await expect(
+        service.updateBlowerConfig('tenant-1', 'blower-1', {
+          currentThreshold: 2.5,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.updateConfig).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createReading', () => {
+    const reading = {
+      psi: 2,
+      tenantId: 'tenant-1',
+      blowerId: 'blower-1',
+      blowerConfigId: 'config-1',
+      currentThreshold: 0.5,
+    };
+
+    beforeEach(() => {
+      repository.getBlowerConfigById.mockResolvedValue({
+        id: 'config-1',
+        tenantId: 'tenant-1',
+        currentThreshold: 2.5,
+        saveIntervalSeconds: 3600,
+      });
+      repository.getAlertState.mockResolvedValue({
+        lastSaveAt: Date.now(),
+        lastAlertState: false,
+      });
+      repository.createReading.mockResolvedValue({});
+      repository.updateAlertState.mockResolvedValue({});
+    });
+
+    it('calcula la alarma con el umbral persistido, no con el enviado en la lectura', async () => {
+      const result = await service.createReading(reading);
+
+      expect(repository.getBlowerConfigById).toHaveBeenCalledWith('config-1');
+      expect(result).toEqual({
+        psi: 2,
+        isAlert: true,
+        source: 'alert',
+      });
+      expect(repository.createReading).toHaveBeenCalledWith(
+        expect.objectContaining({ isAlert: true }),
+      );
+      expect(repository.updateConfig).not.toHaveBeenCalled();
+    });
+
+    it('vuelve a leer el umbral persistido para cada lectura', async () => {
+      repository.getBlowerConfigById
+        .mockResolvedValueOnce({
+          id: 'config-1',
+          tenantId: 'tenant-1',
+          currentThreshold: 1,
+          saveIntervalSeconds: 3600,
+        })
+        .mockResolvedValueOnce({
+          id: 'config-1',
+          tenantId: 'tenant-1',
+          currentThreshold: 3,
+          saveIntervalSeconds: 3600,
+        });
+
+      const firstResult = await service.createReading({ ...reading, psi: 2 });
+      const secondResult = await service.createReading({ ...reading, psi: 2 });
+
+      expect(firstResult).toBeNull();
+      expect(secondResult).toEqual({
+        psi: 2,
+        isAlert: true,
+        source: 'alert',
+      });
+      expect(repository.getBlowerConfigById).toHaveBeenCalledTimes(2);
+    });
+
+    it('usa el intervalo persistido para decidir cuándo guardar lecturas regulares', async () => {
+      repository.getBlowerConfigById.mockResolvedValue({
+        id: 'config-1',
+        tenantId: 'tenant-1',
+        currentThreshold: 1,
+        saveIntervalSeconds: 1,
+      });
+      repository.getAlertState.mockResolvedValue({
+        lastSaveAt: Date.now() - 2000,
+        lastAlertState: false,
+      });
+
+      const result = await service.createReading({ ...reading, psi: 2 });
+
+      expect(result).toEqual({
+        psi: 2,
+        isAlert: false,
+        source: 'scheduled',
+      });
+    });
+
+    it('rechaza lecturas cuya configuración no pertenece al tenant', async () => {
+      repository.getBlowerConfigById.mockResolvedValue({
+        id: 'config-1',
+        tenantId: 'other-tenant',
+        currentThreshold: 2.5,
+        saveIntervalSeconds: 3600,
+      });
+
+      await expect(service.createReading(reading)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -210,12 +387,10 @@ describe('AerationService', () => {
 
       const result = await service.revokeDeviceKey('blwr_key', 'tenant-1');
 
-      // Validamos actualización en BD
       expect(repository.updateKeyActive).toHaveBeenCalledWith(
         'blwr_key',
         false,
       );
-      // Validamos cierre de socket
       expect(connectionRegistry.closeByBlowerId).toHaveBeenCalledWith(
         'blwr-1',
         'key_revoked',

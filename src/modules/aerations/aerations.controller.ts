@@ -61,7 +61,7 @@ export class AerationsController {
   }
 
   @Patch('blowers/:blowerId/config')
-  @ApiOperation({ summary: 'Configurar intervalo y valor escala' })
+  @ApiOperation({ summary: 'Configurar umbral, intervalo y factor de escala' })
   async updateBlowerConfig(
     @Param('blowerId') blowerId: string,
     @Body() dto: UpdateBlowerConfigDto,
@@ -77,20 +77,5 @@ export class AerationsController {
     @Req() req: RequestWithUser,
   ) {
     return this.aerationService.deleteBlower(req.user.tenantId, blowerId);
-  }
-
-  @Get('blowers/:blowerId/threshold')
-  @ApiOperation({summary: 'Obtener el umbral configurado de un blower'})
-  async getBlowerThrehold(
-    @Param('blowerId') blowerId: string,
-    @Req() req: RequestWithUser,
-  ) {
-    const threshold = await this.aerationService.getLatestThreshold(req.user.tenantId, blowerId);
-    return {
-      status: 'success',
-      data: {
-        blowerId, 
-        currentThreshold: threshold}
-    }
   }
 }
