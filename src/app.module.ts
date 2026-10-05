@@ -14,6 +14,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TanksModule } from './modules/tanks/tanks.module';
 import { AerationsModule } from './modules/aerations/aerations.module';
+import { BatchesModule } from './modules/batches/batches.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { AerationsModule } from './modules/aerations/aerations.module';
     AuthModule,
     UsersModule,
     TanksModule,
+    BatchesModule,
   ],
   controllers: [],
   providers: [
