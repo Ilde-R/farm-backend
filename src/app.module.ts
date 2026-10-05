@@ -15,6 +15,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TanksModule } from './modules/tanks/tanks.module';
 import { AerationsModule } from './modules/aerations/aerations.module';
 import { BatchesModule } from './modules/batches/batches.module';
+import { TankMovementsModule } from './modules/tank-movements/tank-movements.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { BatchesModule } from './modules/batches/batches.module';
     UsersModule,
     TanksModule,
     BatchesModule,
+    TankMovementsModule,
   ],
   controllers: [],
   providers: [

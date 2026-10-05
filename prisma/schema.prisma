@@ -146,7 +146,8 @@ model Tank {
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   batches Batch[]
-  tankMovements TankMovement[]
+  sourceMovements TankMovement[] @relation("MovementSourceTank")
+  destinationMovements TankMovement[] @relation("MovementDestinationTank")
   @@map("tanks")
 }
 
@@ -163,21 +164,27 @@ model Batch {
 
   createdAt DateTime  @default(now()) @db.Timestamptz(3) 
 
-  tankMovements TankMovement[]
+  sourceMovements TankMovement[] @relation("MovementSourceBatch")
+  receivedMovements TankMovement[] @relation("MovementDestinationBatch")
   @@map("batches")
 } 
 
 model TankMovement {
   id String @id @default(uuid()) @db.Uuid
-  batch Batch @relation(fields: [batchId], references: [id])
+  batch Batch @relation("MovementSourceBatch", fields: [batchId], references: [id])
   batchId String @db.Uuid
-  tank Tank @relation(fields: [tankId], references: [id])
-  tankId String @db.Uuid
+  destinationBatch Batch? @relation("MovementDestinationBatch", fields: [destinationBatchId], references: [id])
+  destinationBatchId String? @db.Uuid
+  sourceTank Tank @relation("MovementSourceTank", fields: [sourceTankId], references: [id])
+  sourceTankId String @db.Uuid
+  destinationTank Tank? @relation("MovementDestinationTank", fields: [destinationTankId], references: [id])
+  destinationTankId String? @db.Uuid
 
   movementType MovementType
   quantity Int 
   notes String?
 
+  movementDate DateTime @default(now()) @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@map("tanks_movements")
