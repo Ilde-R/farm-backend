@@ -12,7 +12,7 @@ RUN NODE_OPTIONS="--max-old-space-size=256" npx prisma generate
 COPY . .
 
 FROM development AS build
-RUN NODE_OPTIONS="--max-old-space-size=256" npm run build
+RUN NODE_OPTIONS="--max-old-space-size=512" npm run build
 
 RUN npm prune --omit=dev
 
