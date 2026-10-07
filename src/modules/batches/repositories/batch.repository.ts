@@ -13,21 +13,30 @@ export class BatchRepository {
     data: CreateBatchDto,
     tenantId: string,
   ): Promise<BatchSelect | null> {
-    const tank = await this.prisma.tank.findFirst({
-      where: { id: data.tankId, tenantId },
-      select: { id: true },
-    });
+    return this.prisma.$transaction(async (transaction) => {
+      const tank = await transaction.tank.findFirst({
+        where: { id: data.tankId, tenantId },
+        select: { id: true },
+      });
 
-    if (!tank) {
-      return null;
-    }
+      if (!tank) {
+        return null;
+      }
 
-    return this.prisma.batch.create({
-      data: {
-        ...data,
-        currentQuantity: data.initialQuantity,
-      },
-      select: batchSelect,
+      const batch = await transaction.batch.create({
+        data: {
+          ...data,
+          currentQuantity: data.initialQuantity,
+        },
+        select: batchSelect,
+      });
+
+      await transaction.tank.update({
+        where: { id: tank.id },
+        data: { tankStatus: 'isActive' },
+      });
+
+      return batch;
     });
   }
 

@@ -50,11 +50,13 @@ export class BatchesService {
     return batch;
   }
 
-  async remove(id: string, tenantId: string): Promise<void> {
+  async remove(id: string, tenantId: string): Promise<{ message: string }> {
     const removed = await this.batchRepository.remove(id, tenantId);
 
     if (!removed) {
       throw new NotFoundException('Lote no encontrado o no autorizado');
     }
+
+    return { message: 'Lote eliminado con éxito' };
   }
 }
