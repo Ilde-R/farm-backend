@@ -6,7 +6,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CommonModule } from './common/common.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
@@ -21,14 +20,6 @@ import { TankMovementsModule } from './modules/tank-movements/tank-movements.mod
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-    }),
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60000,
-          limit: 10,
-        },
-      ],
     }),
     EventEmitterModule.forRoot({
       wildcard: true,
@@ -48,10 +39,6 @@ import { TankMovementsModule } from './modules/tank-movements/tank-movements.mod
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

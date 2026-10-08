@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +19,7 @@ import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Public } from './decorators/public.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { SpanishThrottlerGuard } from './guards/spanish-throttler.guard';
 import type { RequestWithUser } from './interfaces/request-with-user.interface';
 
 @ApiTags('Autenticación')
@@ -26,6 +28,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @UseGuards(SpanishThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
@@ -34,6 +37,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(SpanishThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -45,6 +49,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(SpanishThrottlerGuard)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
