@@ -26,4 +26,19 @@ export class TankRepository extends BaseRepository<
             }
         })
     }
+
+    async hasActiveBatches(tenantId:string, tankId: string) {
+        const batch = await this.prisma.batch.findFirst({
+            where: {
+                tankId,
+                batchesStatus: 'isActive',
+                tank: {
+                    is: {tenantId}
+                }
+            },
+            select: {id: true}
+        })
+
+        return batch !== null;
+    }
 }
