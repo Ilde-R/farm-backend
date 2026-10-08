@@ -24,6 +24,7 @@ export class BatchRepository {
         FROM tanks
         WHERE id = ${data.tankId}::uuid
           AND "tenantId" = ${tenantId}::uuid
+          AND "deletedAt" IS NULL
         FOR UPDATE
       `;
       const tank = tanks[0];
@@ -93,7 +94,7 @@ export class BatchRepository {
   ): Promise<BatchSelect | null> {
     if (data.tankId) {
       const tank = await this.prisma.tank.findFirst({
-        where: { id: data.tankId, tenantId },
+        where: { id: data.tankId, tenantId, deletedAt: null },
         select: { id: true },
       });
 

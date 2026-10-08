@@ -25,7 +25,7 @@ export class TankMovementsRepository {
       const sourceBatch = await transaction.batch.findFirst({
         where: {
           id: data.batchId,
-          tank: { is: { tenantId } },
+          tank: { is: { tenantId, deletedAt: null } },
         },
         select: {
           id: true,
@@ -48,7 +48,7 @@ export class TankMovementsRepository {
       }
 
       const destinationTank = await transaction.tank.findFirst({
-        where: { id: data.destinationTankId, tenantId },
+        where: { id: data.destinationTankId, tenantId, deletedAt: null },
         select: { id: true },
       });
 
@@ -115,7 +115,7 @@ export class TankMovementsRepository {
       const batch = await transaction.batch.findFirst({
         where: {
           id: data.batchId,
-          tank: { is: { tenantId } },
+          tank: { is: { tenantId, deletedAt: null } },
         },
         select: {
           id: true,

@@ -1,0 +1,2 @@
+ALTER TABLE "tanks"
+ADD COLUMN "deletedAt" TIMESTAMPTZ(3);
