@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateBatchDto } from '../dto/create-batch.dto';
@@ -59,6 +64,92 @@ export class BatchRepository {
       });
 
       return { status: 'created', batch };
+    });
+  }
+
+  async harvest(id: string, tenantId: string): Promise<BatchSelect> {
+    return this.prisma.$transaction(async (transaction) => {
+      const existingBatch = await transaction.batch.findFirst({
+        where: {
+          id,
+          tank: { is: { tenantId } },
+        },
+        select: { id: true, tankId: true },
+      });
+
+      if (!existingBatch?.tankId) {
+        throw new NotFoundException('Lote no encontrado o no autorizado');
+      }
+
+      await transaction.$queryRaw<{ id: string }[]>`
+        SELECT id
+        FROM tanks
+        WHERE id = ${existingBatch.tankId}::uuid
+          AND "tenantId" = ${tenantId}::uuid
+        FOR UPDATE
+      `;
+
+      const batch = await transaction.batch.findFirst({
+        where: {
+          id,
+          tank: { is: { tenantId } },
+        },
+        select: {
+          id: true,
+          tankId: true,
+          currentQuantity: true,
+          batchesStatus: true,
+        },
+      });
+
+      if (!batch?.tankId) {
+        throw new NotFoundException('Lote no encontrado o no autorizado');
+      }
+
+      if (batch.batchesStatus !== 'isActive') {
+        throw new ConflictException('El lote ya está cerrado o cosechado.');
+      }
+
+      if (batch.currentQuantity !== 0) {
+        throw new BadRequestException(
+          'No se puede cosechar el lote mientras tenga cantidad disponible; registra primero su venta o transferencia.',
+        );
+      }
+
+      const updated = await transaction.batch.updateMany({
+        where: {
+          id: batch.id,
+          tankId: batch.tankId,
+          batchesStatus: 'isActive',
+          currentQuantity: 0,
+        },
+        data: {
+          batchesStatus: 'harvested',
+          harvestedDate: new Date(),
+        },
+      });
+
+      if (updated.count !== 1) {
+        throw new ConflictException(
+          'El lote cambió mientras se procesaba; vuelve a intentarlo.',
+        );
+      }
+
+      await transaction.tank.update({
+        where: { id: batch.tankId },
+        data: { tankStatus: 'empty' },
+      });
+
+      const harvestedBatch = await transaction.batch.findFirst({
+        where: { id: batch.id, tank: { is: { tenantId } } },
+        select: batchSelect,
+      });
+
+      if (!harvestedBatch) {
+        throw new NotFoundException('Lote no encontrado o no autorizado');
+      }
+
+      return harvestedBatch;
     });
   }
 

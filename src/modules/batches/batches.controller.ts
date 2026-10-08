@@ -33,6 +33,14 @@ export class BatchesController {
     return this.batchesService.findOne(id, req.user.tenantId);
   }
 
+  @Post(':id/harvest')
+  harvest(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    return this.batchesService.harvest(id, req.user.tenantId);
+  }
+
   @Patch(':id')
   update(
     @Req() req: RequestWithUser,

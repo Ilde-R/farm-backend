@@ -46,6 +46,10 @@ export class BatchesService {
     return batch;
   }
 
+  harvest(id: string, tenantId: string) {
+    return this.batchRepository.harvest(id, tenantId);
+  }
+
   async update(id: string, updateBatchDto: UpdateBatchDto, tenantId: string) {
     const batch = await this.batchRepository.update(
       id,
