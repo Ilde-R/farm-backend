@@ -11,6 +11,7 @@ describe('TankMovementsRepository', () => {
     tankId: 'source-tank',
     currentQuantity: 100,
     stockingDate: new Date('2026-01-01T00:00:00.000Z'),
+    batchesStatus: 'isActive',
   };
 
   const createDto: CreateTransferDto = {
@@ -20,18 +21,29 @@ describe('TankMovementsRepository', () => {
     movementDate: new Date('2026-02-01T00:00:00.000Z'),
   };
 
-  function createRepository(currentQuantity = 100) {
+  function createRepository(
+    currentQuantity = 100,
+    destinationBatch: { id: string } | null = null,
+  ) {
     const transaction = {
+      $queryRaw: jest
+        .fn()
+        .mockResolvedValue([
+          { id: 'source-tank' },
+          { id: 'destination-tank' },
+        ]),
       batch: {
-        findFirst: jest.fn().mockResolvedValue({
-          ...sourceBatch,
-          currentQuantity,
-        }),
+        findFirst: jest.fn((args: { where: { id?: string } }) =>
+          args.where.id
+            ? Promise.resolve({ ...sourceBatch, currentQuantity })
+            : Promise.resolve(destinationBatch),
+        ),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        update: jest.fn().mockResolvedValue({ id: destinationBatch?.id }),
         create: jest.fn().mockResolvedValue({ id: 'destination-batch' }),
       },
       tank: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'destination-tank' }),
+        update: jest.fn().mockResolvedValue({}),
       },
       tankMovement: {
         create: jest.fn().mockResolvedValue({ id: 'movement' }),
@@ -54,7 +66,7 @@ describe('TankMovementsRepository', () => {
     };
   }
 
-  it('splits quantity into a separate batch and records both tanks', async () => {
+  it('creates a destination batch when the destination has no active batch', async () => {
     const { repository, transaction } = createRepository();
 
     await repository.createTransfer(createDto, 'tenant-id');
@@ -84,6 +96,34 @@ describe('TankMovementsRepository', () => {
           sourceTankId: 'source-tank',
           destinationTankId: 'destination-tank',
           quantity: 50,
+        }),
+      }),
+    );
+    expect(transaction.tank.update).toHaveBeenCalledWith({
+      where: { id: 'destination-tank' },
+      data: { tankStatus: 'isActive' },
+    });
+  });
+
+  it('adds transferred quantity to the active destination batch without changing its initial quantity', async () => {
+    const activeDestinationBatch = { id: 'existing-destination-batch' };
+    const { repository, transaction } = createRepository(
+      100,
+      activeDestinationBatch,
+    );
+
+    await repository.createTransfer(createDto, 'tenant-id');
+
+    expect(transaction.batch.update).toHaveBeenCalledWith({
+      where: { id: activeDestinationBatch.id },
+      data: { currentQuantity: { increment: 50 } },
+      select: { id: true },
+    });
+    expect(transaction.batch.create).not.toHaveBeenCalled();
+    expect(transaction.tankMovement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          destinationBatchId: activeDestinationBatch.id,
         }),
       }),
     );

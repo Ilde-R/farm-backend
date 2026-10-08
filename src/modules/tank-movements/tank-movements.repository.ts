@@ -25,6 +25,7 @@ export class TankMovementsRepository {
       const sourceBatch = await transaction.batch.findFirst({
         where: {
           id: data.batchId,
+          batchesStatus: 'isActive',
           tank: { is: { tenantId, deletedAt: null } },
         },
         select: {
@@ -47,14 +48,19 @@ export class TankMovementsRepository {
         );
       }
 
-      const destinationTank = await transaction.tank.findFirst({
-        where: { id: data.destinationTankId, tenantId, deletedAt: null },
-        select: { id: true },
-      });
+      const lockedTanks = await transaction.$queryRaw<{ id: string }[]>`
+        SELECT id
+        FROM tanks
+        WHERE id IN (${sourceBatch.tankId}::uuid, ${data.destinationTankId}::uuid)
+          AND "tenantId" = ${tenantId}::uuid
+          AND "deletedAt" IS NULL
+        ORDER BY id
+        FOR UPDATE
+      `;
 
-      if (!destinationTank) {
+      if (lockedTanks.length !== 2) {
         throw new NotFoundException(
-          'Tanque destino no encontrado o no autorizado',
+          'Tanque origen o destino no encontrado o no autorizado',
         );
       }
 
@@ -68,6 +74,7 @@ export class TankMovementsRepository {
         where: {
           id: sourceBatch.id,
           tankId: sourceBatch.tankId,
+          batchesStatus: 'isActive',
           currentQuantity: { gte: data.quantity },
         },
         data: {
@@ -81,14 +88,33 @@ export class TankMovementsRepository {
         );
       }
 
-      const destinationBatch = await transaction.batch.create({
-        data: {
-          tankId: destinationTank.id,
-          stockingDate: sourceBatch.stockingDate,
-          initialQuantity: data.quantity,
-          currentQuantity: data.quantity,
+      const existingDestinationBatch = await transaction.batch.findFirst({
+        where: {
+          tankId: data.destinationTankId,
+          batchesStatus: 'isActive',
         },
         select: { id: true },
+      });
+
+      const destinationBatch = existingDestinationBatch
+        ? await transaction.batch.update({
+            where: { id: existingDestinationBatch.id },
+            data: { currentQuantity: { increment: data.quantity } },
+            select: { id: true },
+          })
+        : await transaction.batch.create({
+            data: {
+              tankId: data.destinationTankId,
+              stockingDate: sourceBatch.stockingDate,
+              initialQuantity: data.quantity,
+              currentQuantity: data.quantity,
+            },
+            select: { id: true },
+          });
+
+      await transaction.tank.update({
+        where: { id: data.destinationTankId },
+        data: { tankStatus: 'isActive' },
       });
 
       return transaction.tankMovement.create({
@@ -96,7 +122,7 @@ export class TankMovementsRepository {
           batchId: sourceBatch.id,
           destinationBatchId: destinationBatch.id,
           sourceTankId: sourceBatch.tankId,
-          destinationTankId: destinationTank.id,
+          destinationTankId: data.destinationTankId,
           movementType: 'transfer',
           quantity: data.quantity,
           movementDate: data.movementDate,
