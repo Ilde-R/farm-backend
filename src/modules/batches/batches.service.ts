@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
 import { BatchRepository } from './repositories/batch.repository';
@@ -10,16 +14,22 @@ export class BatchesService {
   }
 
   async create(createBatchDto: CreateBatchDto, tenantId: string) {
-    const batch = await this.batchRepository.create(
+    const result = await this.batchRepository.create(
       createBatchDto,
       tenantId,
     );
 
-    if (!batch) {
+    if (result.status === 'not-found') {
       throw new NotFoundException('Tanque no encontrado o no autorizado');
     }
 
-    return batch;
+    if (result.status === 'active-batch-exists') {
+      throw new ConflictException(
+        'No se puede crear otro lote mientras el tanque tenga un lote activo.',
+      );
+    }
+
+    return result.batch;
   }
 
   findAll(pagination: PaginationQueryDto, tenantId: string) {

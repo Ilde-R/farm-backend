@@ -5,6 +5,11 @@ import { CreateBatchDto } from '../dto/create-batch.dto';
 import { UpdateBatchDto } from '../dto/update-batch.dto';
 import { batchSelect, BatchSelect } from '../selects/batch.select';
 
+export type CreateBatchResult =
+  | { status: 'not-found' }
+  | { status: 'active-batch-exists' }
+  | { status: 'created'; batch: BatchSelect };
+
 @Injectable()
 export class BatchRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -12,15 +17,31 @@ export class BatchRepository {
   async create(
     data: CreateBatchDto,
     tenantId: string,
-  ): Promise<BatchSelect | null> {
+  ): Promise<CreateBatchResult> {
     return this.prisma.$transaction(async (transaction) => {
-      const tank = await transaction.tank.findFirst({
-        where: { id: data.tankId, tenantId },
+      const tanks = await transaction.$queryRaw<{ id: string }[]>`
+        SELECT id
+        FROM tanks
+        WHERE id = ${data.tankId}::uuid
+          AND "tenantId" = ${tenantId}::uuid
+        FOR UPDATE
+      `;
+      const tank = tanks[0];
+
+      if (!tank) {
+        return { status: 'not-found' };
+      }
+
+      const activeBatch = await transaction.batch.findFirst({
+        where: {
+          tankId: tank.id,
+          batchesStatus: 'isActive',
+        },
         select: { id: true },
       });
 
-      if (!tank) {
-        return null;
+      if (activeBatch) {
+        return { status: 'active-batch-exists' };
       }
 
       const batch = await transaction.batch.create({
@@ -36,7 +57,7 @@ export class BatchRepository {
         data: { tankStatus: 'isActive' },
       });
 
-      return batch;
+      return { status: 'created', batch };
     });
   }
 
