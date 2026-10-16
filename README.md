@@ -2,8 +2,6 @@
 
 Real-time IoT backend for managing and monitoring aquaculture farms. It centralizes tenants, users, IoT blowers and sensor readings, threshold alerts, and the full operational data of the farm (tanks, batches and movements) behind a secured, multi-tenant REST + WebSocket API.
 
-<!-- TODO: replace the placeholder URLs (marked with PLACEHOLDER) in the Links & Contact section and in docs/screenshots before publishing. -->
-
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
@@ -327,9 +325,8 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 | Resource | Link |
 | --- | --- |
-| Frontend / mobile app | <!-- TODO: replace --> `PLACEHOLDER: frontend repository URL` |
-| LinkedIn | <!-- TODO: replace --> `PLACEHOLDER: LinkedIn URL` |
-| Portfolio | <!-- TODO: replace --> `PLACEHOLDER: portfolio URL` |
+| Frontend / mobile app | [farm-frontend](https://github.com/Ilde-R/farm-frontend) |
+| LinkedIn | [Ilde Noel Rios Ordaz](https://www.linkedin.com/in/ilde-noel-rios-ordaz-b757123b8/) |
 
 **Author:** Ilde Rios — `ilderios0304@gmail.com`
 
