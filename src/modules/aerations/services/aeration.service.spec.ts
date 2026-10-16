@@ -170,6 +170,7 @@ describe('AerationService', () => {
         blowerId: 'blwr-1',
         tenantId: 'tenant-1',
         currentThreshold: 3.5,
+        deviceKey: 'blwr_valida',
       });
     });
   });

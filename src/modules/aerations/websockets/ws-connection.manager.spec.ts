@@ -21,6 +21,7 @@ describe('WsConnectionManager', () => {
     };
     const registry = {
       clients: new Map([[client, clientInfo]]),
+      register: jest.fn(),
       broadcastToUsers: jest.fn(),
       hasConnectionForBlowerConfig: jest.fn().mockReturnValue(false),
       unregister: jest.fn(),

@@ -1,8 +1,8 @@
 {
   "name": "farm-backend",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Real-time IoT backend for managing and monitoring aquaculture farms: multi-tenant auth, IoT blowers, sensor readings, threshold alerts and farm operations over REST + WebSocket.",
+  "author": "Ilde Rios <ilderios0304@gmail.com>",
   "private": true,
   "main": "dist/src/main.js",
   "license": "UNLICENSED",
